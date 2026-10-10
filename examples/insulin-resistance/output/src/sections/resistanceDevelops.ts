@@ -1,17 +1,23 @@
 import type { Section } from '../section.ts';
 import { breakFix, h } from '../dom.ts';
 import { drawMechanism } from '../viz/mechanism.ts';
+import { mountStepper } from '../../../../../shared/stepper.ts';
+import { resistanceFlow } from '../flows.ts';
 
 export const resistanceDevelops: Section = {
   id: 'resistance-develops',
   group: 'Mechanism',
   title: 'Resistance develops',
-  icon: '🚪',
+  icon: 'bi-door-closed',
   badge: 'how it works',
   caption:
     'In insulin resistance, cells respond less to insulin. The gate stays ' +
     'mostly shut. The body makes more insulin to force it open.',
   render(el) {
+    const flowHost = h('div', { class: 'mb-3' });
+    el.append(flowHost);
+    mountStepper(flowHost, resistanceFlow);
+
     el.append(
       h('div', { class: 'prose' }, [
         h('p', {}, [

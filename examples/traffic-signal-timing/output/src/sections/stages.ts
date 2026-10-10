@@ -11,19 +11,20 @@ import {
 } from '../domain.ts';
 import { breakFix, card, h, num, vizPanel } from '../dom.ts';
 import { drawWaveProfile } from '../viz/charts.ts';
-import { drawGrid } from '../viz/topology.ts';
+import { mountStepper } from '../../../../../shared/stepper.ts';
+import { flowFor } from '../flows.ts';
 
 const ICONS: Record<string, string> = {
-  'stage-1': '①',
-  'stage-20': '⑳',
-  'stage-500': '🏙️'
+  'stage-1': 'bi-1-circle',
+  'stage-20': 'bi-signpost-split',
+  'stage-500': 'bi-buildings'
 };
 
 function s(n: number): string {
   return Math.round(n) + ' s';
 }
 
-function narrative(stage: Stage): { breaks: string[]; fixes: string[] } {
+function narrative(stage: Stage): { lead: string; breaks: string[]; fixes: string[] } {
   const dpa = demandPerApproach(stage);
   const x = saturation(dpa, stage.approachCapacity);
   const naive = uncoordinatedWait(stage, dpa);
@@ -31,6 +32,7 @@ function narrative(stage: Stage): { breaks: string[]; fixes: string[] } {
   switch (stage.id) {
     case 'stage-1':
       return {
+        lead: 'Start with one light and light traffic. A fixed, repeating cycle is simple and enough. Learn this base case, then watch what more lights do to it.',
         breaks: [
           'Nothing breaks yet. One light serves a light demand.',
           `Demand per approach is near ${num(Math.round(dpa))} cars per hour. Saturation is ${(x * 100).toFixed(0)} percent.`
@@ -42,6 +44,7 @@ function narrative(stage: Stage): { breaks: string[]; fixes: string[] } {
       };
     case 'stage-20':
       return {
+        lead: 'Now the road has 20 lights in a line. Each light still times itself and knows nothing about its neighbours. A group of cars leaves one light together, but it does not reach the next light at the right moment.',
         breaks: [
           'Each of 20 lights keeps its own cycle. Phases clash.',
           `A clump of cars hits a red at many stops. The mean wait climbs to about ${s(naive)}.`,
@@ -55,6 +58,7 @@ function narrative(stage: Stage): { breaks: string[]; fixes: string[] } {
       };
     case 'stage-500':
       return {
+        lead: 'At city scale, the traffic itself changes through the day. Rush hour flows one way in the morning and the other way at night. A plan that is fixed in advance cannot follow it.',
         breaks: [
           'A fixed green wave points one way. The morning rush points downtown.',
           'The evening rush points away. A fixed plan fails for half the day.',
@@ -67,7 +71,7 @@ function narrative(stage: Stage): { breaks: string[]; fixes: string[] } {
         ]
       };
     default:
-      return { breaks: [], fixes: [] };
+      return { lead: '', breaks: [], fixes: [] };
   }
 }
 
@@ -82,12 +86,18 @@ export function stageSection(stage: Stage): Section {
     id: stage.id,
     group: 'Growth steps',
     title: stage.name,
-    icon: ICONS[stage.id] ?? '•',
+    icon: ICONS[stage.id] ?? 'bi-circle',
     badge: CONTROL_LABEL[stage.control],
     caption:
       `${num(stage.intersections)} intersection(s), ${num(stage.carsPerHour)} cars per hour. ` +
       `Hold the mean wait at or under ${WAIT_LIMIT_SECONDS} s.`,
     render(el) {
+      el.append(h('div', { class: 'prose lead' }, [h('p', {}, [story.lead])]));
+
+      const flowHost = h('div', { class: 'mb-3' });
+      el.append(flowHost);
+      mountStepper(flowHost, flowFor(stage));
+
       el.append(
         h('div', { class: 'cards' }, [
           card('Wait rule', WAIT_LIMIT_SECONDS + ' s', ''),
@@ -99,34 +109,32 @@ export function stageSection(stage: Stage): Section {
 
       el.append(breakFix(story.breaks, story.fixes));
 
-      const grid = vizPanel('Road layout and signal state', 'chart short');
       const wave = vizPanel('Mean wait as a car crosses successive stops');
-      el.append(h('div', { class: 'two-col' }, [grid.panel, wave.panel]));
+      el.append(wave.panel);
+      el.append(
+        h('p', { class: 'chart-note' }, [
+          'How to read this chart: each point is a stop along the road. The red line is the mean wait when each light ' +
+            'works alone. The green line is the mean wait with coordination. The dotted line is the rule.'
+        ])
+      );
 
-      // Build the per-stop mean-wait profile. Naive grows with each stop,
-      // coordinated stays flat.
+      // Per-stop mean wait. Naive grows with each stop, coordinated stays flat.
       const stopCount = Math.min(stage.intersections, 12);
       const stops: number[] = [];
       const naiveSeries: number[] = [];
       const coordSeries: number[] = [];
-      const base = coord;
       const redPhase = stage.cycle * (1 - stage.greenShare);
       for (let i = 1; i <= Math.max(1, stopCount); i++) {
         stops.push(i);
-        naiveSeries.push(base + (i - 1) * redPhase * 0.18);
-        coordSeries.push(base);
+        naiveSeries.push(coord + (i - 1) * redPhase * 0.18);
+        coordSeries.push(coord);
       }
 
-      let disposeGrid: (() => void) | undefined;
       let disposeWave: (() => void) | undefined;
       requestAnimationFrame(() => {
-        disposeGrid = drawGrid(grid.host, { intersections: stage.intersections, control: stage.control });
         disposeWave = drawWaveProfile(wave.host, stops, naiveSeries, coordSeries, WAIT_LIMIT_SECONDS);
       });
-      return () => {
-        disposeGrid?.();
-        disposeWave?.();
-      };
+      return () => disposeWave?.();
     }
   };
 }

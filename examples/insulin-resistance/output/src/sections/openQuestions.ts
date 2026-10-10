@@ -5,7 +5,7 @@ export const openQuestions: Section = {
   id: 'open-questions',
   group: 'Open questions',
   title: 'Open questions',
-  icon: '❓',
+  icon: 'bi-question-circle',
   badge: 'proposed',
   caption:
     'Some causes are not settled. The items below are open questions, not ' +

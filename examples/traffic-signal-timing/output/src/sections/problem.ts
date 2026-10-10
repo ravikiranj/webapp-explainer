@@ -6,7 +6,7 @@ export const problem: Section = {
   id: 'problem',
   group: 'Start here',
   title: 'The problem',
-  icon: '📄',
+  icon: 'bi-file-text',
   badge: 'brief',
   caption: 'The original problem statement that this app explains.',
   render(el) {

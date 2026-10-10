@@ -17,7 +17,7 @@ export const APPS: readonly AppCard[] = [
     slug: 'rate-limiter',
     title: 'Rate Limiting',
     subtitle: 'one node to many regions',
-    icon: '🚦',
+    icon: 'bi-speedometer2',
     domain: 'System design',
     summary:
       'How a per-key request limit holds as a service grows from one node ' +
@@ -29,7 +29,7 @@ export const APPS: readonly AppCard[] = [
     slug: 'traffic-signal-timing',
     title: 'Traffic Signal Timing',
     subtitle: 'one light to a whole city',
-    icon: '🚥',
+    icon: 'bi-signpost-split',
     domain: 'System design',
     summary:
       'How the 90 second wait rule holds as a city grows from one ' +
@@ -41,7 +41,7 @@ export const APPS: readonly AppCard[] = [
     slug: 'unique-id-generator',
     title: 'Unique ID Generator',
     subtitle: 'one node to many regions',
-    icon: '🔢',
+    icon: 'bi-123',
     domain: 'System design',
     summary:
       'How IDs stay unique and roughly time sortable as the rate grows ' +
@@ -53,7 +53,7 @@ export const APPS: readonly AppCard[] = [
     slug: 'insulin-resistance',
     title: 'Insulin Resistance',
     subtitle: 'and higher South Asian risk',
-    icon: '🩺',
+    icon: 'bi-heart-pulse',
     domain: 'Science and health',
     summary:
       'Why South Asians face higher diabetes and heart disease risk at a ' +
@@ -65,7 +65,7 @@ export const APPS: readonly AppCard[] = [
     slug: 'chess-endgames',
     title: 'Chess Endgames',
     subtitle: 'an interactive trainer up to 1800 ELO',
-    icon: '♟️',
+    icon: 'bi-puzzle',
     domain: 'Skill and practice',
     summary:
       'Learn core endgame concepts, then solve at least twenty positions ' +

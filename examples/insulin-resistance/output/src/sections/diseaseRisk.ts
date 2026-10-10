@@ -8,7 +8,7 @@ export const diseaseRisk: Section = {
   id: 'disease-risk',
   group: 'Risk cutoffs',
   title: 'Downstream risk',
-  icon: '❤️',
+  icon: 'bi-heart-pulse',
   badge: 'real data',
   caption:
     'Insulin resistance raises the risk of type 2 diabetes, high blood ' +

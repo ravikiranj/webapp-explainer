@@ -1,214 +1,97 @@
-:root {
-  --bg: #0f1420;
-  --panel: #171e2e;
-  --panel-2: #1e2740;
-  --ink: #e9edf5;
-  --ink-dim: #c2cce0;
-  --line: #2a3350;
-  --accent: #4f9dff;
-  --good: #37d39b;
-  --bad: #ff6b6b;
-  --warn: #ffc24b;
-  --sq-light: #cdd7e6;
-  --sq-dark: #5c7191;
-  --chart-axis: #4a567a;
+/* Chess trainer parts. The shared stylesheet provides the layout and colours. */
+
+:root,
+[data-bs-theme="light"] {
+  --sq-light: #eceff4;
+  --sq-dark: #8fa6bf;
 }
 
-:root[data-theme="light"] {
-  --bg: #f4f6fb;
-  --panel: #ffffff;
-  --panel-2: #eef1f8;
-  --ink: #0f1420;
-  --ink-dim: #4a5169;
-  --line: #d4dae8;
-  --accent: #1769e0;
-  --good: #0f9d6b;
-  --bad: #d84040;
-  --warn: #b67700;
-  --sq-light: #eaeef6;
-  --sq-dark: #8aa0c0;
-  --chart-axis: #b8c0d4;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  height: 100%;
-}
-
-body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-size: 15px;
-}
-
-.app-shell {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  height: 100vh;
-}
-
-.side-nav {
-  background: var(--panel);
-  border-right: 1px solid var(--line);
-  overflow-y: auto;
-  padding: 20px 14px;
-}
-
-.brand {
-  font-size: 17px;
-  font-weight: 700;
-  padding: 0 8px 6px;
-}
-
-.brand small {
-  display: block;
-  font-weight: 400;
-  font-size: 12px;
-  color: var(--ink-dim);
+[data-bs-theme="dark"] {
+  --sq-light: #c9d3e0;
+  --sq-dark: #5d7494;
 }
 
 .profile-box {
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  margin: 12px 8px 0;
   padding: 12px;
-  margin: 12px 8px;
+  border: 1px solid var(--sb-line);
+  border-radius: 10px;
+  background: var(--sb-hover);
 }
 
 .profile-box label {
-  font-size: 11px;
+  color: var(--sb-dim);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-dim);
 }
 
 .profile-box select,
 .profile-box input {
   width: 100%;
   margin-top: 6px;
-  background: var(--bg);
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: 7px;
   padding: 6px 8px;
-  font-size: 14px;
+  border: 1px solid var(--sb-line);
+  border-radius: 7px;
+  background: var(--sb-bg);
+  color: #ffffff;
+  font-size: 0.88rem;
 }
 
-.profile-box .row {
+.profile-row {
   display: flex;
   gap: 6px;
   margin-top: 8px;
 }
 
-.profile-box button {
-  background: var(--accent);
-  color: #06111f;
+.profile-row button {
+  padding: 5px 12px;
   border: 0;
   border-radius: 7px;
-  padding: 6px 10px;
-  font-size: 13px;
+  background: var(--sb-active);
+  color: #ffffff;
+  font-size: 0.82rem;
   font-weight: 600;
-  cursor: pointer;
   white-space: nowrap;
-}
-
-.nav-group-title {
-  text-transform: uppercase;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: var(--ink-dim);
-  padding: 16px 8px 6px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  text-align: left;
-  background: transparent;
-  border: 0;
-  color: var(--ink);
-  padding: 9px 10px;
-  border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
 }
 
-.nav-item:hover {
-  background: var(--panel-2);
-}
-
-.nav-item.active {
-  background: var(--accent);
-  color: #06111f;
-  font-weight: 600;
-}
-
-.nav-item .ico {
-  font-size: 17px;
-}
-
-.nav-item .count {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--good);
-}
-
-.nav-item.active .count {
-  color: #06111f;
-}
-
-.content {
-  overflow-y: auto;
-  padding: 28px 34px 60px;
-  outline: none;
-}
-
-.content h1 {
-  font-size: 24px;
-  margin: 0 0 4px;
-}
-
-.caption {
-  color: var(--ink-dim);
-  margin: 0 0 16px;
-  max-width: 70ch;
+.content > h1 {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 650;
 }
 
 .teach {
-  background: var(--panel);
+  max-width: 76ch;
+  margin-bottom: 1.1rem;
+  padding: 1rem 1.2rem;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 16px 18px;
-  margin-bottom: 18px;
-  max-width: 72ch;
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  background: var(--panel);
 }
 
 .teach h2 {
-  font-size: 15px;
-  margin: 0 0 8px;
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .teach ul {
   margin: 0;
-  padding-left: 18px;
+  padding-left: 1.1rem;
 }
 
 .teach li {
-  margin: 5px 0;
+  margin: 0.3rem 0;
 }
 
 .play {
   display: grid;
-  grid-template-columns: minmax(320px, 460px) 1fr;
-  gap: 24px;
+  grid-template-columns: minmax(320px, 470px) 1fr;
+  gap: 1.5rem;
   align-items: start;
 }
 
@@ -218,19 +101,20 @@ body {
   grid-template-rows: repeat(8, 1fr);
   width: 100%;
   aspect-ratio: 1 / 1;
-  border: 2px solid var(--line);
+  border: 3px solid var(--sb-bg);
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 6px 18px rgba(15, 27, 45, 0.18);
 }
 
 .sq {
-  border: 0;
-  padding: 0;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  border: 0;
   cursor: pointer;
-  position: relative;
 }
 
 .sq.light {
@@ -242,7 +126,7 @@ body {
 }
 
 .sq.selected {
-  box-shadow: inset 0 0 0 3px var(--accent);
+  box-shadow: inset 0 0 0 4px var(--accent);
 }
 
 .sq.target::after {
@@ -251,16 +135,16 @@ body {
   width: 26%;
   height: 26%;
   border-radius: 50%;
-  background: rgba(79, 157, 255, 0.6);
+  background: rgba(42, 91, 215, 0.55);
 }
 
 .piece {
-  width: 86%;
-  height: 86%;
+  width: 88%;
+  height: 88%;
   object-fit: contain;
-  user-select: none;
   pointer-events: none;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+  user-select: none;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
 }
 
 .side-panel {
@@ -268,13 +152,13 @@ body {
 }
 
 .trainer-status {
-  background: var(--panel);
+  min-height: 62px;
+  margin-bottom: 0.9rem;
+  padding: 0.85rem 1rem;
   border: 1px solid var(--line);
-  border-left-width: 4px;
+  border-left: 4px solid var(--tone-grey);
   border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 14px;
-  min-height: 60px;
+  background: var(--panel);
 }
 
 .trainer-status.good {
@@ -291,17 +175,17 @@ body {
 
 .controls {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 8px;
 }
 
 .controls button {
-  background: var(--panel-2);
-  color: var(--ink);
+  padding: 7px 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 9px 14px;
-  font-size: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.88rem;
   cursor: pointer;
 }
 
@@ -310,91 +194,29 @@ body {
 }
 
 .controls button.primary {
-  background: var(--accent);
-  color: #06111f;
   border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
   font-weight: 600;
 }
 
 .progress-line {
-  margin-top: 16px;
-  font-size: 13px;
+  margin-top: 1rem;
   color: var(--ink-dim);
-}
-
-.progress-bar {
-  height: 8px;
-  background: var(--panel-2);
-  border-radius: 999px;
-  overflow: hidden;
-  margin-top: 6px;
-}
-
-.progress-bar .fill {
-  height: 100%;
-  background: var(--good);
+  font-size: 0.85rem;
 }
 
 .engine-note {
-  font-size: 12px;
-  color: var(--ink-dim);
-  border-top: 1px solid var(--line);
-  margin-top: 24px;
-  padding-top: 12px;
   max-width: 72ch;
+  margin-top: 1.4rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--line);
+  color: var(--ink-dim);
+  font-size: 0.8rem;
 }
 
 @media (max-width: 980px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
   .play {
     grid-template-columns: 1fr;
   }
-}
-
-.markdown {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 20px 24px;
-  max-width: 80ch;
-}
-.markdown h1 { font-size: 20px; margin: 0 0 10px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
-.markdown h2 { font-size: 16px; margin-top: 20px; }
-.markdown ul, .markdown ol { padding-left: 20px; }
-.markdown li { margin: 4px 0; }
-.markdown code { background: var(--panel-2); padding: 2px 6px; border-radius: 5px; font-size: 13px; }
-.markdown a { color: var(--accent); }
-
-.theme-toggle {
-  width: calc(100% - 16px);
-  margin: 10px 8px 0;
-  background: var(--panel-2);
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.theme-toggle:hover {
-  border-color: var(--accent);
-}
-
-.home-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 10px 8px 2px;
-  color: var(--ink-dim);
-  text-decoration: none;
-  font-size: 13px;
-  padding: 6px 8px;
-  border-radius: 8px;
-}
-.home-link:hover {
-  background: var(--panel-2);
-  color: var(--ink);
 }

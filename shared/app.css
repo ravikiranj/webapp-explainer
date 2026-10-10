@@ -1,0 +1,625 @@
+/* Shared look for every app. Bootstrap 5.3 provides the components. This file
+   adds the palette, the navy sidebar, and the few custom parts. */
+
+:root,
+[data-bs-theme="light"] {
+  color-scheme: light;
+  --ink: #1b2330;
+  --ink-dim: #566074;
+  --line: #dde3ee;
+  --chart-axis: #d3dae8;
+  --bg: #ffffff;
+  --panel: #ffffff;
+  --panel-2: #f3f6fb;
+  --accent: #2a5bd7;
+  --good: #167a4b;
+  --bad: #cf3535;
+  --warn: #9a5700;
+  /* Colours with a meaning. The same colour means the same thing everywhere. */
+  --tone-blue: #2a5bd7;
+  --tone-green: #198754;
+  --tone-orange: #e8590c;
+  --tone-purple: #7048e8;
+  --tone-grey: #6b7686;
+  --tone-red: #d63a3a;
+  --sb-bg: #0f1b2d;
+  --sb-ink: #c5d1e3;
+  --sb-dim: #8c9ab1;
+  --sb-hover: #1b2c47;
+  --sb-line: #25364f;
+  --sb-active: #2a5bd7;
+  --bs-body-bg: var(--bg);
+  --bs-body-color: var(--ink);
+  --bs-body-font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+[data-bs-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e6edf7;
+  --ink-dim: #a5b3c9;
+  --line: #2b3a55;
+  --chart-axis: #3d4d6b;
+  --bg: #0c1522;
+  --panel: #132033;
+  --panel-2: #1a2b45;
+  --accent: #6b9bff;
+  --good: #3ecf8e;
+  --bad: #ff7b7b;
+  --warn: #ffc24b;
+  --tone-blue: #6b9bff;
+  --tone-green: #3ecf8e;
+  --tone-orange: #ff9a52;
+  --tone-purple: #a18bff;
+  --tone-grey: #9aa7bb;
+  --tone-red: #ff7b7b;
+  --sb-bg: #08111d;
+  --sb-hover: #15233a;
+  --sb-line: #1c2b43;
+  --sb-active: #2a5bd7;
+  --bs-body-bg: var(--bg);
+  --bs-body-color: var(--ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+/* ---------- Layout and sidebar ---------- */
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  height: 100vh;
+}
+
+.side-nav {
+  display: flex;
+  flex-direction: column;
+  background: var(--sb-bg);
+  color: var(--sb-ink);
+  overflow-y: auto;
+  padding: 18px 14px;
+}
+
+.side-nav .brand {
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 600;
+  padding: 0 8px 4px;
+}
+
+.side-nav .brand .bi {
+  margin-right: 6px;
+}
+
+.side-nav .brand small {
+  display: block;
+  margin-top: 2px;
+  color: var(--sb-dim);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+.home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 8px 0;
+  padding: 5px 8px;
+  border-radius: 8px;
+  color: var(--sb-ink);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.home-link:hover {
+  background: var(--sb-hover);
+  color: #ffffff;
+}
+
+.theme-toggle {
+  margin: 8px 8px 0;
+  padding: 6px 10px;
+  border: 1px solid var(--sb-line);
+  border-radius: 8px;
+  background: var(--sb-hover);
+  color: var(--sb-ink);
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  border-color: var(--sb-active);
+  color: #ffffff;
+}
+
+.nav-group-title {
+  padding: 18px 10px 6px;
+  color: var(--sb-dim);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 2px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sb-ink);
+  font-size: 0.92rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nav-item .bi {
+  width: 1.2rem;
+  text-align: center;
+  opacity: 0.9;
+}
+
+.nav-item .count {
+  margin-left: auto;
+  color: #6fe0b0;
+  font-size: 0.72rem;
+}
+
+.nav-item:hover {
+  background: var(--sb-hover);
+  color: #ffffff;
+}
+
+.nav-item.active {
+  background: var(--sb-active);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.nav-item.active .count {
+  color: #ffffff;
+}
+
+.content {
+  overflow-y: auto;
+  padding: 26px 34px 70px;
+  outline: none;
+}
+
+.page-head {
+  margin-bottom: 18px;
+}
+
+.page-head h1 {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 650;
+}
+
+.caption {
+  max-width: 80ch;
+  margin: 6px 0 0;
+  color: var(--ink-dim);
+}
+
+.prose {
+  max-width: 78ch;
+}
+
+.prose p {
+  margin: 0.6rem 0;
+}
+
+.prose.lead p {
+  font-size: 1.04rem;
+}
+
+/* ---------- Cards, panels and notes ---------- */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.9rem;
+  margin: 1.1rem 0;
+}
+
+.card.metric,
+.cards > .card {
+  padding: 0.9rem 1rem;
+  border-color: var(--line);
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.card .k {
+  color: var(--ink-dim);
+  font-size: 0.78rem;
+}
+
+.card .v {
+  margin-top: 0.15rem;
+  color: var(--ink);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.card .v.good {
+  color: var(--good);
+}
+
+.card .v.bad {
+  color: var(--bad);
+}
+
+.card .v.warn {
+  color: var(--warn);
+}
+
+.card .sub {
+  margin-top: 0.15rem;
+  color: var(--ink-dim);
+  font-size: 0.78rem;
+}
+
+.viz {
+  margin: 1.1rem 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.viz h2 {
+  margin: 0 0 0.7rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.chart {
+  width: 100%;
+  height: 320px;
+}
+
+.chart.short {
+  height: 240px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.chart-note,
+.note {
+  margin: 0.5rem 0 0;
+  color: var(--ink-dim);
+  font-size: 0.82rem;
+}
+
+.cmp-table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--ink);
+  --bs-table-border-color: var(--line);
+  --bs-table-hover-bg: var(--panel-2);
+  --bs-table-hover-color: var(--ink);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.cmp-table th {
+  color: var(--ink-dim);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.markdown {
+  max-width: 90ch;
+  padding: 1.4rem 1.7rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.markdown h1 {
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 1.3rem;
+}
+
+.markdown h2 {
+  margin-top: 1.4rem;
+  font-size: 1.1rem;
+}
+
+.markdown a {
+  color: var(--accent);
+}
+
+.markdown code {
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--panel-2);
+  color: var(--ink);
+  font-size: 0.85em;
+}
+
+.markdown pre {
+  padding: 0.9rem;
+  border-radius: 10px;
+  background: var(--panel-2);
+  overflow-x: auto;
+}
+
+.markdown li {
+  margin: 4px 0;
+}
+
+.src-tag {
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 0.72rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.src-tag:hover {
+  background: var(--panel-2);
+}
+
+.refs {
+  margin: 1.1rem 0;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.refs h2 {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+}
+
+.refs ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.refs li {
+  margin: 0.5rem 0;
+  color: var(--ink-dim);
+  font-size: 0.8rem;
+}
+
+.refs a {
+  color: var(--accent);
+}
+
+/* ---------- Step-through diagram ---------- */
+
+.flow-steps .list-group-item {
+  border-color: var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.flow-steps .list-group-item:hover {
+  background: var(--panel-2);
+}
+
+.flow-steps .list-group-item.active {
+  border-left: 3px solid var(--accent);
+  background: var(--panel-2);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.flow-diagram,
+.flow-text {
+  border-color: var(--line);
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.flow-diagram {
+  padding: 8px;
+}
+
+/* ---------- Live simulation ---------- */
+
+.sim-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1.1rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.sim-controls .ctrl {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 150px;
+}
+
+.sim-controls label {
+  color: var(--ink-dim);
+  font-size: 0.78rem;
+}
+
+.sim-controls output {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.sim-controls input[type="range"] {
+  width: 180px;
+  accent-color: var(--accent);
+}
+
+.sim-controls select {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.sim-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sim-btn.secondary {
+  border-color: var(--line);
+  background: var(--panel-2);
+  color: var(--ink);
+}
+
+.sim-readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
+}
+
+.sim-readout .big {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.sim-readout .ok {
+  color: var(--good);
+}
+
+.sim-readout .over {
+  color: var(--bad);
+}
+
+.viz svg circle,
+.viz svg rect {
+  transition: opacity 0.12s ease;
+}
+
+.viz svg circle:hover,
+.viz svg rect:hover {
+  opacity: 0.75;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Older helper classes, styled with Bootstrap colour tokens ---------- */
+
+.break-fix {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1.1rem 0;
+}
+
+.break-fix .box {
+  padding: 1rem 1.1rem;
+  border: 1px solid;
+  border-radius: 0.6rem;
+}
+
+.break-fix .box.breaks {
+  border-color: var(--bs-danger-border-subtle);
+  background: var(--bs-danger-bg-subtle);
+  color: var(--bs-danger-text-emphasis);
+}
+
+.break-fix .box.fix {
+  border-color: var(--bs-success-border-subtle);
+  background: var(--bs-success-bg-subtle);
+  color: var(--bs-success-text-emphasis);
+}
+
+.break-fix h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.break-fix ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.tag {
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-dim);
+  font-size: 0.72rem;
+}
+
+.tag.proposed {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+@media (max-width: 900px) {
+  .break-fix {
+    grid-template-columns: 1fr;
+  }
+}

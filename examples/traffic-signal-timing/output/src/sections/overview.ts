@@ -17,7 +17,7 @@ export const overview: Section = {
   id: 'overview',
   group: 'Start here',
   title: 'Overview',
-  icon: '🎯',
+  icon: 'bi-bullseye',
   badge: 'concept',
   caption:
     'Signal timing sets how long each light stays green. One light is simple. ' +

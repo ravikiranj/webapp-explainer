@@ -11,7 +11,7 @@ export const overview: Section = {
   id: 'overview',
   group: 'Start here',
   title: 'Overview',
-  icon: '🎯',
+  icon: 'bi-bullseye',
   badge: 'concept',
   caption:
     'Rate limiting caps the request rate per key. One node is simple. ' +

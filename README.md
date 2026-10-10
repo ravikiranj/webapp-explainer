@@ -64,6 +64,7 @@ Every app is reachable from the landing page, or directly at
 
 ## Notes
 
+- The apps share one look from `shared/` (Bootstrap 5.3, Bootstrap Icons, Inter, a light/dark theme, a step-through diagram, and the app shell).
 - The chess trainer bundles the Stockfish WebAssembly engine locally
   (`examples/chess-endgames/output/public/engine/`). It makes no network call.
   It uses the single-threaded "lite" build, so it needs no special

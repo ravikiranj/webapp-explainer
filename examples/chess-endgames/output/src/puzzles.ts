@@ -346,7 +346,7 @@ export const CONCEPTS: readonly Concept[] = [
   {
     id: 'opposition',
     title: 'Opposition and the pawn',
-    icon: '👑',
+    icon: 'bi-arrow-up-circle',
     elo: 1400,
     idea: 'Use the king to escort a passed pawn to promotion.',
     teach: [
@@ -359,7 +359,7 @@ export const CONCEPTS: readonly Concept[] = [
   {
     id: 'queen-mate',
     title: 'Queen versus king mate',
-    icon: '♛',
+    icon: 'bi-gem',
     elo: 1400,
     idea: 'Drive the lone king to the edge and mate, without stalemate.',
     teach: [
@@ -372,7 +372,7 @@ export const CONCEPTS: readonly Concept[] = [
   {
     id: 'rook-mate',
     title: 'Rook versus king mate',
-    icon: '♜',
+    icon: 'bi-grid-3x3-gap',
     elo: 1600,
     idea: 'Use the rook to cut the king off and shrink the box.',
     teach: [
@@ -385,7 +385,7 @@ export const CONCEPTS: readonly Concept[] = [
   {
     id: 'rook-and-pawn',
     title: 'Rook and pawn conversion',
-    icon: '♖',
+    icon: 'bi-flag',
     elo: 1800,
     idea: 'Convert a rook and an extra pawn into a win.',
     teach: [

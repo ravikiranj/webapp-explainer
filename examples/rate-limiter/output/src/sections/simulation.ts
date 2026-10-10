@@ -14,7 +14,7 @@ export const simulation: Section = {
   id: 'simulation',
   group: 'Start here',
   title: 'Live simulation',
-  icon: '🎛️',
+  icon: 'bi-sliders',
   badge: 'interactive',
   caption:
     'Run the limiter live. Change the node count, the arrival rate, and the ' +

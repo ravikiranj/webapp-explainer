@@ -13,19 +13,22 @@ import {
 } from '../domain.ts';
 import { breakFix, card, h, num, vizPanel } from '../dom.ts';
 import { drawTimeOrder } from '../viz/charts.ts';
-import { drawNodes, drawSnowflakeLayout } from '../viz/topology.ts';
+import { drawSnowflakeLayout } from '../viz/topology.ts';
+import { mountStepper } from '../../../../../shared/stepper.ts';
+import { flowFor } from '../flows.ts';
 
 const ICONS: Record<string, string> = {
-  'stage-1': '①',
-  'stage-10': '⑩',
-  'stage-100': '🌐'
+  'stage-1': 'bi-1-circle',
+  'stage-10': 'bi-hdd-stack',
+  'stage-100': 'bi-globe2'
 };
 
-function narrative(stage: Stage): { breaks: string[]; fixes: string[] } {
+function narrative(stage: Stage): { lead: string; breaks: string[]; fixes: string[] } {
   const n = naiveCounterOutcome(stage);
   switch (stage.id) {
     case 'stage-1':
       return {
+        lead: 'Start with one node and 100 IDs per second. One counter in memory is enough. Learn this base case first, then watch what more nodes do to it.',
         breaks: [
           'Nothing breaks yet. One node sees every ID it ever gave.',
           'An in-memory set finds any repeat at once.'
@@ -37,6 +40,7 @@ function narrative(stage: Stage): { breaks: string[]; fixes: string[] } {
       };
     case 'stage-10':
       return {
+        lead: 'The generator now runs on 10 nodes. Each node still counts alone, and no node sees the IDs that the others issue. That is the trap: every node thinks its next ID is new.',
         breaks: [
           `All ${num(stage.nodes)} nodes start the same counter at the same value.`,
           `Each value repeats on every node. About ${num(n.collisionsPerSecond)} IDs per second collide.`,
@@ -50,6 +54,7 @@ function narrative(stage: Stage): { breaks: string[]; fixes: string[] } {
       };
     case 'stage-100':
       return {
+        lead: 'At 1,000,000 IDs per second across 5 regions, a call between nodes for every ID is too slow, and random IDs lose the time order. The last step builds order and uniqueness into the ID itself.',
         breaks: [
           'A random UUID is unique but not sortable by time.',
           'A plain counter cannot sync across 5 regions with network delay.',
@@ -62,7 +67,7 @@ function narrative(stage: Stage): { breaks: string[]; fixes: string[] } {
         ]
       };
     default:
-      return { breaks: [], fixes: [] };
+      return { lead: '', breaks: [], fixes: [] };
   }
 }
 
@@ -75,12 +80,18 @@ export function stageSection(stage: Stage): Section {
     id: stage.id,
     group: 'Growth steps',
     title: stage.name,
-    icon: ICONS[stage.id] ?? '•',
+    icon: ICONS[stage.id] ?? 'bi-circle',
     badge: SCHEME_LABEL[stage.scheme],
     caption:
       `${num(stage.nodes)} node(s), ${num(stage.regions)} region(s), ${num(stage.idsPerSecond)} IDs per second. ` +
       'Keep every ID unique and roughly time sortable.',
     render(el) {
+      el.append(h('div', { class: 'prose lead' }, [h('p', {}, [story.lead])]));
+
+      const flowHost = h('div', { class: 'mb-3' });
+      el.append(flowHost);
+      mountStepper(flowHost, flowFor(stage));
+
       el.append(
         h('div', { class: 'cards' }, [
           card('Rate', num(stage.idsPerSecond) + ' /s', ''),
@@ -97,13 +108,20 @@ export function stageSection(stage: Stage): Section {
 
       el.append(breakFix(story.breaks, story.fixes));
 
-      const nodes = vizPanel('Nodes and regions', 'chart short');
-      const second = stage.scheme === 'snowflake'
-        ? vizPanel('Snowflake 64 bit layout', 'chart short')
-        : vizPanel('Time order: snowflake against random UUID');
-      el.append(h('div', { class: 'two-col' }, [nodes.panel, second.panel]));
+      const second =
+        stage.scheme === 'snowflake'
+          ? vizPanel('Snowflake 64 bit layout', 'chart short')
+          : vizPanel('Time order: snowflake against random UUID');
+      el.append(second.panel);
+      el.append(
+        h('p', { class: 'chart-note' }, [
+          stage.scheme === 'snowflake'
+            ? 'How to read this: the bar is one 64 bit ID. The time bits sit on the left, so a plain numeric sort is also a sort by time.'
+            : 'How to read this: each dot is one ID. A rising line of green dots means the IDs sort by time. A cloud of red dots means they do not.'
+        ])
+      );
 
-      // Build a small time-order sample for the non-snowflake stages.
+      // A small time-order sample for the non-snowflake stages.
       const rand = seededRandom(stage.order * 1361);
       const ordered: [number, number][] = [];
       const random: [number, number][] = [];
@@ -112,25 +130,19 @@ export function stageSection(stage: Stage): Section {
         random.push([i, rand() * 40]);
       }
 
-      let d1: (() => void) | undefined;
       let d2: (() => void) | undefined;
       requestAnimationFrame(() => {
-        d1 = drawNodes(nodes.host, { nodes: stage.nodes, regions: stage.regions, scheme: stage.scheme });
         if (stage.scheme === 'snowflake') {
           d2 = drawSnowflakeLayout(second.host);
-          const sample = h('div', { class: 'note' }, [
-            'Example ID now: ' + buildSnowflake(Date.now(), 7, 42)
-          ]);
-          second.panel.append(sample);
+          second.panel.append(
+            h('div', { class: 'note' }, ['Example ID now: ' + buildSnowflake(Date.now(), 7, 42)])
+          );
         } else {
           d2 = drawTimeOrder(second.host, ordered, random);
         }
       });
 
-      return () => {
-        d1?.();
-        d2?.();
-      };
+      return () => d2?.();
     }
   };
 }

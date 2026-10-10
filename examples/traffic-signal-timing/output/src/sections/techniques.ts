@@ -7,7 +7,7 @@ export const techniques: Section = {
   id: 'techniques',
   group: 'Compare',
   title: 'Control strategies',
-  icon: '⚖️',
+  icon: 'bi-columns-gap',
   badge: 'trade-offs',
   caption:
     'Each control strategy trades on-time share against operating cost and ' +
@@ -25,7 +25,7 @@ export const techniques: Section = {
     el.append(
       h('div', { class: 'viz' }, [
         h('h2', {}, ['Side by side']),
-        h('table', { class: 'cmp-table' }, [
+        h('table', { class: 'table table-hover cmp-table' }, [
           h('thead', {}, [
             h('tr', {}, [
               h('th', {}, ['Strategy']),

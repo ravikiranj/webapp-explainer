@@ -7,7 +7,7 @@ export const simulation: Section = {
   id: 'simulation',
   group: 'Start here',
   title: 'Live simulation',
-  icon: '🎛️',
+  icon: 'bi-sliders',
   badge: 'interactive',
   caption:
     'Run the road live. Cars flow through the lights. Turn coordination on ' +

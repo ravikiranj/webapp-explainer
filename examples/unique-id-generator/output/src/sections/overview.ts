@@ -15,7 +15,7 @@ export const overview: Section = {
   id: 'overview',
   group: 'Start here',
   title: 'Overview',
-  icon: '🎯',
+  icon: 'bi-bullseye',
   badge: 'concept',
   caption:
     'A unique ID generator must never give two requests the same ID. ' +

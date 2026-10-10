@@ -12,7 +12,7 @@ export const cutoffs: Section = {
   id: 'cutoffs',
   group: 'Risk cutoffs',
   title: 'Standard vs South Asian',
-  icon: '📏',
+  icon: 'bi-rulers',
   badge: 'real data',
   caption:
     'Standard cutoffs came from mostly European study groups. South Asians ' +

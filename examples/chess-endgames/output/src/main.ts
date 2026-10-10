@@ -1,4 +1,13 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
+// Import the Bootstrap JavaScript one time. Without this import, the
+// interactive Bootstrap parts do not work.
+import 'bootstrap';
+import '../../../../shared/app.css';
 import './style.css';
 import { marked } from 'marked';
 import problemText from './problem.md?raw';
@@ -36,7 +45,7 @@ function buildNav(): void {
   nav.innerHTML = '';
   const brand = document.createElement('div');
   brand.className = 'brand';
-  brand.innerHTML = 'Chess Endgames<small>a trainer up to 1800 ELO</small>';
+  brand.innerHTML = '<i class="bi bi-puzzle"></i> Chess Endgames<small>a trainer up to 1800 ELO</small>';
   nav.append(brand);
   nav.append(createHomeLink());
   nav.append(createThemeToggle());
@@ -60,7 +69,7 @@ function buildNav(): void {
     openConcept(activeConcept);
   });
   const row = document.createElement('div');
-  row.className = 'row';
+  row.className = 'profile-row';
   const input = document.createElement('input');
   input.placeholder = 'New profile name';
   const addBtn = document.createElement('button');
@@ -84,7 +93,7 @@ function buildNav(): void {
 
   const problemBtn = document.createElement('button');
   problemBtn.className = 'nav-item' + (viewMode === 'problem' ? ' active' : '');
-  problemBtn.innerHTML = '<span class="ico">📄</span><span>The problem</span>';
+  problemBtn.innerHTML = '<i class="bi bi-file-text"></i><span>The problem</span>';
   problemBtn.addEventListener('click', () => {
     viewMode = 'problem';
     buildNav();
@@ -102,7 +111,7 @@ function buildNav(): void {
     button.className = 'nav-item' + (viewMode === 'concept' && concept.id === activeConcept.id ? ' active' : '');
     const done = solvedCount(concept);
     button.innerHTML =
-      `<span class="ico">${concept.icon}</span>` +
+      `<i class="bi ${concept.icon}"></i>` +
       `<span>${concept.title}</span>` +
       `<span class="count">${done}/${concept.puzzles.length}</span>`;
     button.addEventListener('click', () => {
@@ -184,9 +193,9 @@ function openConcept(concept: Concept): void {
   const progressLine = document.createElement('div');
   progressLine.className = 'progress-line';
   const progressBar = document.createElement('div');
-  progressBar.className = 'progress-bar';
+  progressBar.className = 'progress mt-2';
   const fill = document.createElement('div');
-  fill.className = 'fill';
+  fill.className = 'progress-bar bg-success';
   progressBar.append(fill);
   sidePanel.append(progressLine, progressBar);
 

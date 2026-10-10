@@ -9,20 +9,14 @@ import {
 } from '../domain.ts';
 import { breakFix, card, h, num, tps, vizPanel } from '../dom.ts';
 import { drawBucket } from '../viz/charts.ts';
-import { drawTopology, type TopologyInput } from '../viz/topology.ts';
+import { mountStepper } from '../../../../../shared/stepper.ts';
+import { flowFor } from '../flows.ts';
 
 const ICONS: Record<string, string> = {
-  'stage-1-node': '①',
-  'stage-10-nodes': '⑩',
-  'stage-50-nodes': '㊿',
-  'stage-full-scale': '∞'
-};
-
-const STORE: Record<string, TopologyInput['store']> = {
-  'in-memory-counter': 'none',
-  'central-counter': 'central',
-  'regional-quota': 'regional',
-  'local-bucket-sync': 'local'
+  'stage-1-node': 'bi-1-circle',
+  'stage-10-nodes': 'bi-hdd-stack',
+  'stage-50-nodes': 'bi-diagram-3',
+  'stage-full-scale': 'bi-globe2'
 };
 
 /** Text for what breaks and how the fix works, keyed by stage id. */
@@ -106,13 +100,17 @@ export function stageSection(stage: Stage): Section {
     id: stage.id,
     group: 'Deployment steps',
     title: stage.name,
-    icon: ICONS[stage.id] ?? '•',
+    icon: ICONS[stage.id] ?? 'bi-circle',
     badge: TECHNIQUE_LABEL[stage.technique],
     caption:
       `${num(stage.nodes)} node(s), ${num(stage.regions)} region(s). ` +
       `Hold a per-key limit of ${tps(stage.perKeyLimit)}.`,
     render(el) {
-      el.append(h('div', { class: 'prose' }, [h('p', {}, [story.lead])]));
+      el.append(h('div', { class: 'prose lead' }, [h('p', {}, [story.lead])]));
+
+      const flowHost = h('div', { class: 'mb-3' });
+      el.append(flowHost);
+      mountStepper(flowHost, flowFor(stage));
 
       el.append(
         h('div', { class: 'cards' }, [
@@ -130,14 +128,12 @@ export function stageSection(stage: Stage): Section {
 
       el.append(breakFix(story.breaks, story.fixes));
 
-      const topo = vizPanel('Topology: key, store, and nodes', 'chart short');
       const bucket = vizPanel('Token bucket for one key over 24 seconds');
-      el.append(h('div', { class: 'two-col' }, [topo.panel, bucket.panel]));
+      el.append(bucket.panel);
       el.append(
         h('p', { class: 'chart-note' }, [
-          'How to read these: the left diagram shows how one key reaches the nodes and whether a shared store sits ' +
-            'between them. The right chart runs a token bucket for one key: the green area is admitted traffic, the ' +
-            'red bars are rejected traffic, and the dotted line is the limit. Admitted traffic should hug the limit.'
+          'How to read this chart: the green area is admitted traffic, the red bars are rejected traffic, ' +
+            'and the dotted line is the limit. Admitted traffic should stay at or under the limit.'
         ])
       );
 
@@ -151,14 +147,8 @@ export function stageSection(stage: Stage): Section {
         stage.perKeyLimit * 1.3
       );
 
-      let disposeTopo: (() => void) | undefined;
       let disposeBucket: (() => void) | undefined;
       requestAnimationFrame(() => {
-        disposeTopo = drawTopology(topo.host, {
-          nodes: stage.nodes,
-          regions: stage.regions,
-          store: STORE[stage.technique]
-        });
         disposeBucket = drawBucket(
           bucket.host,
           sim.map((r) => r.tick),
@@ -169,10 +159,7 @@ export function stageSection(stage: Stage): Section {
         );
       });
 
-      return () => {
-        disposeTopo?.();
-        disposeBucket?.();
-      };
+      return () => disposeBucket?.();
     }
   };
 }

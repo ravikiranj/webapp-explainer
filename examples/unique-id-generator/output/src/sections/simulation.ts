@@ -9,7 +9,7 @@ export const simulation: Section = {
   id: 'simulation',
   group: 'Start here',
   title: 'Live simulation',
-  icon: '🎛️',
+  icon: 'bi-sliders',
   badge: 'interactive',
   caption:
     'Run the generator live. Each dot is an issued ID. Change the scheme and ' +

@@ -7,7 +7,7 @@ export const techniques: Section = {
   id: 'techniques',
   group: 'Compare',
   title: 'Techniques',
-  icon: '⚖️',
+  icon: 'bi-columns-gap',
   badge: 'trade-offs',
   caption:
     'Each technique trades accuracy against coordination cost and latency. ' +
@@ -23,7 +23,7 @@ export const techniques: Section = {
       ])
     );
 
-    const table = h('table', { class: 'cmp-table' }, [
+    const table = h('table', { class: 'table table-hover cmp-table' }, [
       h('thead', {}, [
         h('tr', {}, [
           h('th', {}, ['Technique']),
