@@ -1,0 +1,15 @@
+# ---- build output ----
+site/
+**/dist/
+
+# ---- dependencies ----
+**/node_modules/
+
+# ---- local server records (design section 6) ----
+server.pid
+server.log
+
+# ---- misc ----
+.DS_Store
+*.log
+landing/src/design.md

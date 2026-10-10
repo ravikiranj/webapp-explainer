@@ -1,0 +1,21 @@
+{
+  "name": "chess-endgames-trainer",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "bootstrap": "5.3.3",
+    "chess.js": "1.4.0",
+    "marked": "14.1.2"
+  },
+  "devDependencies": {
+    "stockfish": "19.0.0",
+    "typescript": "5.5.4",
+    "vite": "5.4.8"
+  }
+}

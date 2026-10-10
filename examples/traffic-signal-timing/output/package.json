@@ -1,0 +1,22 @@
+{
+  "name": "traffic-signal-timing-explainer",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "bootstrap": "5.3.3",
+    "d3": "7.9.0",
+    "echarts": "5.5.1",
+    "marked": "14.1.2"
+  },
+  "devDependencies": {
+    "@types/d3": "7.4.3",
+    "typescript": "5.5.4",
+    "vite": "5.4.8"
+  }
+}
