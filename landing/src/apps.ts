@@ -10,6 +10,8 @@ export interface AppCard {
   readonly summary: string;
   readonly dataKind: 'mock' | 'real';
   readonly stages: string[];
+  /** The renderer of the app's video (video-design.md), when it has one. */
+  readonly video?: 'canvas' | 'manim';
 }
 
 export const APPS: readonly AppCard[] = [
@@ -23,7 +25,8 @@ export const APPS: readonly AppCard[] = [
       'How a per-key request limit holds as a service grows from one node ' +
       'to a multi-region fleet. Shows what breaks and the fix at each step.',
     dataKind: 'mock',
-    stages: ['1 node', '10 nodes', '50 nodes / 3 regions', 'full scale']
+    stages: ['1 node', '10 nodes', '50 nodes / 3 regions', 'full scale'],
+    video: 'canvas'
   },
   {
     slug: 'traffic-signal-timing',
@@ -47,7 +50,8 @@ export const APPS: readonly AppCard[] = [
       'How IDs stay unique and roughly time sortable as the rate grows ' +
       'from 100 to 1,000,000 IDs per second across regions.',
     dataKind: 'mock',
-    stages: ['1 node', '10 nodes', '100 nodes / 5 regions']
+    stages: ['1 node', '10 nodes', '100 nodes / 5 regions'],
+    video: 'manim'
   },
   {
     slug: 'insulin-resistance',

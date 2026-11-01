@@ -1,0 +1,16 @@
+{
+  "repo": "ravikiranj/webapp-explainer",
+  "tag": "videos-v1",
+  "apps": {
+    "rate-limiter": {
+      "archive": "rate-limiter-video.tar.gz",
+      "sha256": "1ce796820edf4cc30f816384f57c8894f3bc094b04615da36db8c0ad6eb553b5",
+      "source": "78f922be1d0ab476fd616cb35e7ac1c3dcecc097c426f83aba9e6ef066bf6de1"
+    },
+    "unique-id-generator": {
+      "archive": "unique-id-generator-video.tar.gz",
+      "sha256": "56bbf1a29b9a5a9b467a7c079a7b9b5ea896d5fa1fb11b776b2badd16b12f43a",
+      "source": "57aaf5576cd221519437254e3374854bf4bab7ce9150d85deaeadbca4549232d"
+    }
+  }
+}

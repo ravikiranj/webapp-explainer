@@ -9,6 +9,7 @@ import '@fontsource/inter/700.css';
 import 'bootstrap';
 import '../../../../shared/app.css';
 import { mountShell } from '../../../../shared/shell.ts';
+import { chapterStarts, loadVideoInfo, videoSection } from '../../../../shared/video-player.ts';
 
 import { problem } from './sections/problem.ts';
 import { overview } from './sections/overview.ts';
@@ -16,10 +17,14 @@ import { simulation } from './sections/simulation.ts';
 import { stageSections } from './sections/stages.ts';
 import { techniques } from './sections/techniques.ts';
 
+// The video files come from video/render.mjs (see video-design.md).
+const videoInfo = loadVideoInfo('./video/');
+
 mountShell({
   brand: 'Unique ID Generator',
   subtitle: 'one node to many regions',
   brandIcon: 'bi-123',
-  sections: [problem, overview, simulation, ...stageSections, techniques],
+  sections: [problem, videoSection(videoInfo), overview, simulation, ...stageSections, techniques],
+  video: { sectionId: 'video', chapterStarts: chapterStarts(videoInfo) },
   proposedIds: ['stage-100']
 });

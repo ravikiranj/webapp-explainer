@@ -28,8 +28,25 @@ mkdir -p site/examples
 
 echo "==> Building landing index"
 cp design.md landing/src/design.md
+cp video-design.md landing/src/video-design.md
+cp video/README.md landing/src/video-maker.md
 ( cd landing && npm ci --no-fund --no-audit && npm run build )
 cp -R landing/dist/. site/
+
+# Render the video of each example that has a storyboard (see video-design.md).
+# The canvas renderer needs Chromium (Playwright). The manim renderer needs Docker.
+# Set SKIP_VIDEO=1 to build the apps with the videos that are already in each
+# app's output/public/video/ folder, for example after "node video/release.mjs fetch".
+if [ "${SKIP_VIDEO:-0}" != "1" ]; then
+  echo "==> Installing the video tools"
+  ( cd video && npm ci --no-fund --no-audit && npx playwright install chromium )
+  for app in "${EXAMPLES[@]}"; do
+    if [ -f "examples/$app/video/storyboard.md" ]; then
+      echo "==> Rendering the video of: $app"
+      node video/render.mjs build "examples/$app"
+    fi
+  done
+fi
 
 for app in "${EXAMPLES[@]}"; do
   echo "==> Building example: $app"

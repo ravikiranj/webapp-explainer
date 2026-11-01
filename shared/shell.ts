@@ -22,7 +22,21 @@ export interface ShellOptions {
   readonly proposedIds?: string[];
   /** Show the link back to the index. The default is true. */
   readonly homeLink?: boolean;
+  /**
+   * The video of the app: the id of its section, and the chapter start of each
+   * section, in seconds. A section with a chapter shows a "Watch this part" link.
+   */
+  readonly video?: { readonly sectionId: string; readonly chapterStarts: Promise<Map<string, number>> };
 }
+
+/** Splits a URL fragment such as #video&t=95 into the section id and its parameters. */
+function readHash(): { id: string; params: URLSearchParams } {
+  const [id, ...rest] = location.hash.replace('#', '').split('&');
+  return { id, params: new URLSearchParams(rest.join('&')) };
+}
+
+const clock = (seconds: number): string =>
+  `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 
 /** Mount the shell into #side-nav and #content. */
 export function mountShell(options: ShellOptions): void {
@@ -35,7 +49,7 @@ export function mountShell(options: ShellOptions): void {
   let activeSection: Section | undefined;
   const buttons = new Map<string, HTMLButtonElement>();
 
-  function show(section: Section): void {
+  function show(section: Section, params = new URLSearchParams()): void {
     cleanup?.();
     cleanup = undefined;
     content.innerHTML = '';
@@ -43,7 +57,8 @@ export function mountShell(options: ShellOptions): void {
     for (const [id, button] of buttons) {
       button.classList.toggle('active', id === section.id);
     }
-    history.replaceState(null, '', '#' + section.id);
+    const extra = params.toString();
+    history.replaceState(null, '', '#' + section.id + (extra ? '&' + extra : ''));
 
     const head = document.createElement('div');
     head.className = 'page-head';
@@ -66,10 +81,24 @@ export function mountShell(options: ShellOptions): void {
     caption.textContent = section.caption;
     head.append(titleRow, caption);
     content.append(head);
+    const video = options.video;
+    if (video && section.id !== video.sectionId) {
+      void video.chapterStarts.then((starts) => {
+        const start = starts.get(section.id);
+        if (start === undefined || activeSection !== section) {
+          return;
+        }
+        const link = document.createElement('a');
+        link.className = 'ms-2 small';
+        link.href = `#${video.sectionId}&t=${start}`;
+        link.innerHTML = `<i class="bi bi-play-circle"></i> Watch this part (${clock(start)})`;
+        caption.append(link);
+      });
+    }
 
     const body = document.createElement('div');
     content.append(body);
-    const result = section.render(body);
+    const result = section.render(body, params);
     if (typeof result === 'function') {
       cleanup = result;
     }
@@ -115,6 +144,16 @@ export function mountShell(options: ShellOptions): void {
     }
   });
 
-  const wanted = location.hash.replace('#', '');
-  show(options.sections.find((s) => s.id === wanted) ?? options.sections[0]);
+  // A link inside the app, such as a chapter link, changes the fragment.
+  window.addEventListener('hashchange', () => {
+    const { id, params } = readHash();
+    const section = options.sections.find((s) => s.id === id);
+    if (section) {
+      show(section, params);
+    }
+  });
+
+  const { id, params } = readHash();
+  const first = options.sections.find((s) => s.id === id);
+  show(first ?? options.sections[0], first ? params : undefined);
 }

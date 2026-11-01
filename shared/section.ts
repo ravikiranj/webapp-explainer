@@ -11,6 +11,7 @@ export interface Section {
   /**
    * Draw the section into the given element. Return a cleanup function. The
    * shell calls it when the user leaves the section, so each chart is removed.
+   * params holds the values after the id in the URL, for example t in #video&t=95.
    */
-  render(el: HTMLElement): void | (() => void);
+  render(el: HTMLElement, params?: URLSearchParams): void | (() => void);
 }

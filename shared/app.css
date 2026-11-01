@@ -623,3 +623,60 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Video section: keep the time and the section link readable on the active chapter. */
+.list-group-item.active .text-body-secondary,
+.list-group-item.active a {
+  color: var(--bs-list-group-active-color) !important;
+}
+
+/* Video section: the stage holds the video and the subtitle layer that the player draws. */
+.video-stage {
+  position: relative;
+  overflow: hidden;
+  container-type: inline-size;
+}
+.video-stage:fullscreen {
+  display: flex;
+  align-items: center;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+.video-subs {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: 4%;
+  transition: bottom 0.2s ease;
+  text-align: center;
+  pointer-events: none;
+  line-height: 1.35;
+  font-size: 2.6cqw;
+  font-weight: 500;
+}
+/* The browser shows its control bar while the video is paused or the pointer moves. */
+.video-stage.controls-up .video-subs[data-place='bottom'] {
+  bottom: 15%;
+}
+.video-subs[data-place='top'] {
+  top: 6%;
+  bottom: auto;
+}
+.video-subs[data-size='small'] { font-size: 2cqw; }
+.video-subs[data-size='large'] { font-size: 3.3cqw; }
+.video-subs[data-size='xlarge'] { font-size: 4.2cqw; }
+.video-subs-line {
+  display: inline;
+  padding: 0.12em 0.45em;
+  border-radius: 0.25em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  color: #fff;
+}
+.video-subs[data-color='yellow'] .video-subs-line { color: #ffe066; }
+.video-subs[data-color='cyan'] .video-subs-line { color: #7ee8fa; }
+.video-subs[data-look='box'] .video-subs-line { background: rgba(0, 0, 0, 0.72); }
+.video-subs[data-look='outline'] .video-subs-line {
+  text-shadow: 0 0 3px #000, 0 0 3px #000, 0.06em 0.06em 0 #000, -0.06em -0.06em 0 #000, 0.06em -0.06em 0 #000, -0.06em 0.06em 0 #000;
+}
+.video-subs[data-look='plain'] .video-subs-line { text-shadow: 0 0.05em 0.15em rgba(0, 0, 0, 0.8); }

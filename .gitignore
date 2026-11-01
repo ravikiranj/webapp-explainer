@@ -2,6 +2,11 @@
 site/
 **/dist/
 
+# ---- generated video files (video-design.md, section 11.3) ----
+**/output/public/video/
+**/video/.build/
+video/tts/models/
+
 # ---- dependencies ----
 **/node_modules/
 
@@ -10,6 +15,13 @@ server.pid
 server.log
 
 # ---- misc ----
+__pycache__/
+*.pyc
 .DS_Store
 *.log
 landing/src/design.md
+landing/src/video-design.md
+landing/src/video-maker.md
+
+# ---- release archives (uploaded to a GitHub release, not to git) ----
+release/

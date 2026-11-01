@@ -28,8 +28,16 @@ jobs:
         with:
           node-version: 20
 
+      # The videos are rendered on a developer machine and published as a GitHub
+      # release (see "Videos" in README.md). video/release.json names the release.
+      - name: Check that the published videos match the storyboards
+        run: node video/release.mjs check
+
+      - name: Get the published videos
+        run: node video/release.mjs fetch
+
       - name: Build all apps and the landing index
-        run: bash build.sh
+        run: SKIP_VIDEO=1 bash build.sh
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
