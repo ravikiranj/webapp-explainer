@@ -8,6 +8,8 @@ export interface Section {
   readonly icon: string;
   readonly badge: string;
   readonly caption: string;
+  /** The section has a text version and a video version: the page header shows the Video / Text switch. */
+  readonly hasTextView?: boolean;
   /**
    * Draw the section into the given element. Return a cleanup function. The
    * shell calls it when the user leaves the section, so each chart is removed.

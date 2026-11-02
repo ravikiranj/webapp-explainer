@@ -16,7 +16,7 @@
 //   TTS_COMMAND='my-tts --voice {voice} --output {out}'
 import { createHash } from 'node:crypto';
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ffmpegPath from 'ffmpeg-static';
@@ -30,14 +30,17 @@ const BATCH = 6;
 const MANIM_IMAGE = process.env.MANIM_IMAGE ?? 'manimcommunity/manim:v0.22.1';
 
 const [mode, subjectArg, extra] = process.argv.slice(2);
-if (!['info', 'preview', 'build', 'say'].includes(mode) || !subjectArg) {
-  console.error('usage: node render.mjs info|preview|build|say <subject> [t1,t2,...]');
+if (!['info', 'preview', 'build', 'say', 'remix'].includes(mode) || !subjectArg) {
+  console.error('usage: node render.mjs info|preview|build|say|remix <subject> [t1,t2,...]');
   process.exit(2);
 }
 const SUBJECT = resolve(subjectArg);
-const SRC = join(SUBJECT, 'video');
+// A subject is a folder with storyboard.md in it, or with video/storyboard.md (the
+// webapp-explainer layout). VIDEO_OUT puts the files somewhere else, so that one app
+// can hold many videos.
+const SRC = existsSync(join(SUBJECT, 'storyboard.md')) ? SUBJECT : join(SUBJECT, 'video');
 const WORK = join(SRC, '.build');
-const OUT = join(SUBJECT, 'output', 'public', 'video');
+const OUT = process.env.VIDEO_OUT ? resolve(process.env.VIDEO_OUT) : join(SUBJECT, 'output', 'public', 'video');
 const story = readStoryboard(join(SRC, 'storyboard.md'));
 const renderer = story.meta.renderer ?? 'canvas';
 // "voices" lists the voices; the first is the default. "voice" (one voice) also works.
@@ -213,12 +216,14 @@ function makeVoice() {
 
 /** Places one voice's files at their beat starts, normalizes the loudness, and writes an AAC track. */
 function mixVoice(voice, timeline, out) {
-  const clips = timeline.beats.map((b, i) => ({ start: b.start, file: allBeats()[i].audioFiles[voice] }));
+  const clips = timeline.beats.map((b, i) => ({ start: b.start, file: allBeats()[i].audioFiles[voice], len: allBeats()[i].audioLengths[voice] }));
   const inputs = clips.flatMap((c) => ['-i', c.file]);
-  const delays = clips.map((c, i) => `[${i}:a]adelay=${Math.round(c.start * 1000)}:all=1[a${i}]`);
+  // A short fade at both ends of each line, so that no line starts or stops on a non-zero sample (a click).
+  const delays = clips.map((c, i) =>
+    `[${i}:a]aresample=48000,afade=t=in:d=0.01,afade=t=out:st=${Math.max(0, c.len - 0.015).toFixed(3)}:d=0.015,adelay=${Math.round(c.start * 1000)}:all=1[a${i}]`);
   const mix = `${clips.map((_, i) => `[a${i}]`).join('')}amix=inputs=${clips.length}:normalize=0,apad,loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000[aout]`;
   ffmpeg([...inputs, '-filter_complex', [...delays, mix].join(';'), '-map', '[aout]', '-t', String(timeline.duration),
-    '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', out]);
+    '-c:a', 'libopus', '-b:a', '64k', '-application', 'voip', out]);
 }
 
 const allBeats = () => story.chapters.flatMap((ch) => ch.beats);
@@ -357,30 +362,45 @@ function manimBuild() {
 
 // ---------------------------------------------------------------- outputs (section 8)
 
+// The outputs are WebM only: VP9 video and Opus audio, both royalty-free. The VP9 copy of
+// each silent render is kept in .build and made again only when the render is newer.
+function vp9(src) {
+  const out = src.replace(/\.mp4$/, '.webm');
+  if (!existsSync(out) || statSync(out).mtimeMs < statSync(src).mtimeMs) {
+    ffmpeg(['-i', src, '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', '34', '-row-mt', '1', '-deadline', 'good', '-cpu-used', '4',
+      '-pix_fmt', 'yuv420p', '-an', out]);
+  }
+  return out;
+}
+
 function writeOutputs(timeline, silent, silentSub) {
+  const silentWebm = vp9(silent);
+  const silentSubWebm = vp9(silentSub);
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
-  ffmpeg(['-i', silent, '-c', 'copy', '-movflags', '+faststart', join(OUT, 'video.mp4')]);
-  const voiceList = voices.map((id) => ({ id, label: voiceLabel(id), file: `audio-${id}.m4a` }));
+  const voiceList = voices.map((id) => ({ id, label: voiceLabel(id), file: `audio-${id}.webm` }));
   for (const v of voiceList) {
     mixVoice(v.id, timeline, join(OUT, v.file));
   }
+  // video.webm carries the default voice in its own audio track. One media element then plays
+  // the picture and the voice: a click starts the sound in every browser, and nothing is
+  // kept in sync by seeking. The other voices stay separate files.
+  const mux = (video, out) =>
+    ffmpeg(voiceList.length
+      ? ['-i', video, '-i', join(OUT, voiceList[0].file), '-map', '0:v', '-map', '1:a', '-c', 'copy', out]
+      : ['-i', video, '-c', 'copy', out]);
+  mux(silentWebm, join(OUT, 'video.webm'));
   // The copy to share has the subtitles and the default voice in one file.
-  const shared = join(OUT, 'video-subtitled.mp4');
-  if (voiceList.length) {
-    ffmpeg(['-i', silentSub, '-i', join(OUT, voiceList[0].file), '-map', '0:v', '-map', '1:a', '-c', 'copy', '-movflags', '+faststart', shared]);
-  } else {
-    ffmpeg(['-i', silentSub, '-c', 'copy', '-movflags', '+faststart', shared]);
-  }
+  mux(silentSubWebm, join(OUT, 'video-subtitled.webm'));
   const chapters = timeline.chapters.map((c, i) => ({
     n: c.n, title: c.title, section: c.section, start: +c.t.toFixed(3),
     end: +(i + 1 < timeline.chapters.length ? timeline.chapters[i + 1].t : timeline.duration).toFixed(3),
   }));
   writeFileSync(join(OUT, 'subtitles.vtt'), vtt(timeline.cues));
   writeFileSync(join(OUT, 'chapters.vtt'), vtt(chapters.map((c) => ({ start: c.start, end: c.end, text: `${c.n}. ${c.title}` }))));
-  const info = { title: story.meta.title ?? '', duration: +timeline.duration.toFixed(3), fps: FPS, voices: voiceList, chapters };
+  const info = { title: story.meta.title ?? '', duration: +timeline.duration.toFixed(3), fps: FPS, voices: voiceList, embeddedVoice: voiceList[0]?.id ?? null, chapters };
   writeFileSync(join(OUT, 'video.json'), `${JSON.stringify(info, null, 2)}\n`);
-  console.log(`wrote ${relative(REPO, OUT)}: video.mp4, video-subtitled.mp4, ${voiceList.map((v) => v.file).join(', ')}${voiceList.length ? ', ' : ''}subtitles.vtt, chapters.vtt, video.json`);
+  console.log(`wrote ${relative(REPO, OUT)}: video.webm, video-subtitled.webm, ${voiceList.map((v) => v.file).join(', ')}${voiceList.length ? ', ' : ''}subtitles.vtt, chapters.vtt, video.json`);
 }
 
 /** Checks that each voice ends before its beat ends (section 10.3). */
@@ -423,7 +443,7 @@ function printInfo(timeline) {
 if (mode === 'say') {
   sayAll();
 } else if (renderer === 'canvas') {
-  if (mode === 'build') {
+  if (mode === 'build' || mode === 'remix') {
     makeVoice();
   }
   const { browser, page, timeline } = await canvasPage();
@@ -442,6 +462,16 @@ if (mode === 'say') {
       const imgs = await page.evaluate(([ts]) => window.frames(ts, 'image/png', 1, true), [times]);
       imgs.forEach(([, png], i) => writeFileSync(join(dir, `t${times[i].toFixed(1).padStart(6, '0')}.png`), decode(png)));
       console.log(`wrote ${times.length} frames to ${relative(REPO, dir)}`);
+    } else if (mode === 'remix') {
+      // Mix the voices again and remux them with the frames from the last build, with no new frames or TTS for unchanged lines.
+      checkVoices(timeline);
+      const silent = join(WORK, 'silent.mp4');
+      const silentSub = join(WORK, 'silent-subtitled.mp4');
+      if (!existsSync(silent) || !existsSync(silentSub)) {
+        throw new Error('remix needs .build/silent.mp4 and .build/silent-subtitled.mp4 from a build');
+      }
+      writeOutputs(timeline, silent, silentSub);
+      console.log(`remixed ${relative(REPO, OUT)}`);
     } else {
       checkVoices(timeline);
       const { silent, silentSub } = await canvasBuild(page, timeline);
@@ -451,12 +481,19 @@ if (mode === 'say') {
     await browser.close();
   }
 } else if (renderer === 'manim') {
-  if (mode !== 'build') {
+  if (mode !== 'build' && mode !== 'remix') {
     console.error('info and preview need the canvas renderer. For Manim, run build, or run manim in the container with -s for one frame.');
     process.exit(2);
   }
   makeVoice();
-  const { timeline, silent, silentSub } = manimBuild();
+  // remix reuses the frames and the timeline of the last Manim build.
+  const reuse = mode === 'remix' && ['timeline.json', 'silent.mp4', 'silent-subtitled.mp4'].every((f) => existsSync(join(WORK, f)));
+  if (mode === 'remix' && !reuse) {
+    throw new Error('remix needs .build/timeline.json, .build/silent.mp4 and .build/silent-subtitled.mp4 from a build');
+  }
+  const { timeline, silent, silentSub } = reuse
+    ? { timeline: JSON.parse(readFileSync(join(WORK, 'timeline.json'), 'utf8')), silent: join(WORK, 'silent.mp4'), silentSub: join(WORK, 'silent-subtitled.mp4') }
+    : manimBuild();
   checkTimeline(timeline);
   checkVoices(timeline);
   printInfo(timeline);

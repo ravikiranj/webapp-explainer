@@ -11,6 +11,7 @@ import {
   currentTheme,
   onThemeChange
 } from './theme.ts';
+import { createViewToggle, onViewChange, withMode } from './view-mode.ts';
 
 export interface ShellOptions {
   readonly brand: string;
@@ -44,20 +45,26 @@ export function mountShell(options: ShellOptions): void {
   const nav = document.getElementById('side-nav') as HTMLElement;
   const content = document.getElementById('content') as HTMLElement;
   const proposed = new Set(options.proposedIds ?? []);
+  // The Video / Text switch and the mode parameter apply only to an app with a text version.
+  const hasText = options.sections.some((s) => s.hasTextView);
 
   let cleanup: (() => void) | undefined;
   let activeSection: Section | undefined;
+  let disposeHeadToggle: (() => void) | undefined;
   const buttons = new Map<string, HTMLButtonElement>();
 
   function show(section: Section, params = new URLSearchParams()): void {
     cleanup?.();
     cleanup = undefined;
+    disposeHeadToggle?.();
+    disposeHeadToggle = undefined;
     content.innerHTML = '';
     activeSection = section;
     for (const [id, button] of buttons) {
       button.classList.toggle('active', id === section.id);
     }
-    const extra = params.toString();
+    // The fragment always names the view, so a copied address opens the same view.
+    const extra = (hasText ? withMode(params) : params).toString();
     history.replaceState(null, '', '#' + section.id + (extra ? '&' + extra : ''));
 
     const head = document.createElement('div');
@@ -70,6 +77,11 @@ export function mountShell(options: ShellOptions): void {
     badge.className = 'badge text-bg-secondary';
     badge.textContent = section.badge;
     titleRow.append(h1, badge);
+    if (section.hasTextView) {
+      const [toggle, dispose] = createViewToggle('ms-auto');
+      disposeHeadToggle = dispose;
+      titleRow.append(toggle);
+    }
     if (proposed.has(section.id)) {
       const flag = document.createElement('span');
       flag.className = 'badge text-bg-warning';
@@ -90,7 +102,7 @@ export function mountShell(options: ShellOptions): void {
         }
         const link = document.createElement('a');
         link.className = 'ms-2 small';
-        link.href = `#${video.sectionId}&t=${start}`;
+        link.href = `#${video.sectionId}&t=${start}${hasText ? '&mode=video' : ''}`;
         link.innerHTML = `<i class="bi bi-play-circle"></i> Watch this part (${clock(start)})`;
         caption.append(link);
       });
@@ -114,6 +126,13 @@ export function mountShell(options: ShellOptions): void {
     nav.append(createHomeLink());
   }
   nav.append(createThemeToggle());
+  if (hasText) {
+    const viewRow = document.createElement('div');
+    viewRow.className = 'view-row';
+    viewRow.innerHTML = '<span>Show</span>';
+    viewRow.append(createViewToggle()[0]);
+    nav.append(viewRow);
+  }
 
   // Groups and items.
   const groups = new Map<string, Section[]>();
@@ -139,6 +158,11 @@ export function mountShell(options: ShellOptions): void {
   }
 
   onThemeChange(() => {
+    if (activeSection) {
+      show(activeSection);
+    }
+  });
+  onViewChange(() => {
     if (activeSection) {
       show(activeSection);
     }

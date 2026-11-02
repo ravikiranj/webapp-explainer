@@ -60,7 +60,19 @@ node render.mjs preview ../examples/rate-limiter          # a PNG at the end of 
 node render.mjs preview ../examples/rate-limiter 12,40.5  # PNGs at these times
 node render.mjs say     ../examples/rate-limiter          # the spoken text and phonemes of each beat
 node render.mjs build   ../examples/rate-limiter          # the full video and its files
+node render.mjs remix   ../examples/rate-limiter          # the voices again, with the frames of the last build
 ```
+
+`remix` reuses the silent renders in `<subject>/video/.build/` (and, for Manim,
+`timeline.json`). It makes TTS again only for the lines whose spoken text changed,
+mixes the voices, and writes all the outputs. Use it after a change to
+`lexicon.json`, the voices or the mix. It needs a `build` first. If a new line is
+longer than its beat, it stops: run `build`.
+
+ffmpeg comes from the `ffmpeg-static` package, which has `libvpx-vp9` and `libopus`.
+A static ffmpeg 7 build (which also has `ffprobe`) works too. When you run ffmpeg
+yourself in a shell loop, add `-y` and `< /dev/null`, or it stops at a question or
+reads the loop's input.
 
 `preview` writes to `<subject>/video/.build/preview/`. Look at each frame before a
 full build (section 10.2 of the design). `info` and `preview` work with the canvas
@@ -109,8 +121,9 @@ For each beat and each voice, `render.mjs` makes one WAV file. It keeps the file
 the text, the voice and the speed do not change. It applies `lexicon.json` to the
 spoken text only, so the subtitle shows "IDs" and the voice says "eye deez". A beat
 lasts as long as its longest voice, so every voice fits the same video. Then each
-voice is mixed into its own track, `audio-<voice>.m4a`, at about -16 LUFS. The build
-stops if a voice is longer than its beat.
+voice is mixed into its own Opus track, `audio-<voice>.webm`, at about -16 LUFS.
+Each line gets a 10 ms fade-in and a 15 ms fade-out first, so that no line starts or
+stops with a click. The build stops if a voice is longer than its beat.
 
 ### Pronunciation: check it, do not guess it
 
@@ -139,9 +152,13 @@ Rules that come from real mistakes:
 7. After a change, run `say` again. Then `build` makes only the lines whose
    spoken text changed again.
 
-The player shows a voice list (all voices, and "No voice"). It plays the voice track
-in step with the video and keeps the choice in the browser.
-`video-subtitled.mp4` has the subtitles and the default voice in one file.
+The player shows a voice list (all voices, and "No voice") and keeps the choice in
+the browser. `video.webm` holds the default voice (`embeddedVoice` in `video.json`),
+so the default plays from the video element itself: a click on play starts the sound
+in every browser, with nothing to keep in sync. Another voice plays from its own
+`audio-<voice>.webm` while the video is muted, and moves back to the video time when
+the two differ by more than 0.3 seconds. "No voice" mutes the video.
+`video-subtitled.webm` has the subtitles and the default voice in one file.
 The player draws the subtitles itself, from `subtitles.vtt`. The video element has no `<track>`, so the browser shows no subtitle menu of its own. They are off at first. The viewer can turn them
 on and pick the size, style, colour and position. A fullscreen button keeps them
 visible in fullscreen.
@@ -156,6 +173,31 @@ TTS_COMMAND='my-tts --voice {voice} --output {out}' node render.mjs build ../exa
 
 ## Outputs
 
-`video.mp4` (no sound), `audio-<voice>.m4a` for each voice, `video-subtitled.mp4`, `subtitles.vtt`, `chapters.vtt` and `video.json`,
-in `<subject>/output/public/video/`. Vite copies `public/` into the app build, and
-the app's Video section plays them.
+`video.webm` (with the default voice), `audio-<voice>.webm` for each voice,
+`video-subtitled.webm`, `subtitles.vtt`, `chapters.vtt` and `video.json`, in
+`<subject>/output/public/video/`. Vite copies `public/` into the app build, and the
+app's Video section plays them.
+
+All media is WebM: VP9 video (`-crf 34 -b:v 0 -row-mt 1 -deadline good -cpu-used 4`)
+and Opus audio at 64 kbit/s. Both are royalty-free. There is no MP4.
+
+`VIDEO_OUT=<folder>` writes the outputs to another folder, so that one app can hold
+many videos. A subject folder can also hold `storyboard.md` directly, with no
+`video/` folder.
+
+## Links into the video
+
+The player reads the URL fragment:
+
+- `#video&t=95`, `#video&t=1:35` and `#video&t=1m35s` open the video at 1:35.
+- "Copy link at this time", under the player, copies a link to the current second.
+- In an app that has a text version of a section (`hasTextView: true`), `mode=video`
+  or `mode=text` names the view. The order is the URL, then the last view in this
+  browser, then video. See section 9.11 of the design.
+
+## Check the sound in a browser
+
+A headless browser does not report autoplay in a way you can trust. Check the sound
+with a click on play, in Chromium and in Firefox, with Playwright
+(`npx playwright install firefox`). Remove the Firefox download after the check if
+the disk is small.

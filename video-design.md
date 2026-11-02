@@ -25,11 +25,12 @@ A reference implementation is in [video/](./video/README.md), with two worked ex
       4. Optional choices: the length, the voice, the language, and narration or subtitles only.
    2. The agent writes a storyboard, `video/storyboard.md` (see section 4), and a scene file, `video/scenes.js` or `video/scenes.py` (see section 5). The storyboard is the single source of the video. Every later step reads it, and nothing changes the video except a change to it.
    3. The outputs go in `output/public/video/`:
-      1. `video.mp4`: H.264 video with no sound, 1920x1080, 30 frames each second.
-      2. `video-subtitled.mp4`: the same video with the subtitles drawn in, to share where a subtitle file gets lost.
+      1. `video.webm`: VP9 video, 1920x1080, 30 frames each second, with the default voice as its audio track (Opus). With no narration, it has no audio track.
+      2. `video-subtitled.webm`: the same video with the subtitles drawn in, to share where a subtitle file gets lost.
+      Use WebM only: VP9 and Opus are royalty-free, and every current browser plays them. Do not also write MP4 (H.264, AAC). Those codecs have patent licences.
       3. `subtitles.vtt` and `chapters.vtt`: WebVTT files that come from the same timeline as the video.
-      4. `video.json`: the duration, and each chapter with its start, end, title and section id.
-      5. `audio-<voice>.m4a`: one narration track for each voice, when there is narration. Keep the audio file of each line in a cache folder, so that a rebuild can reuse it.
+      4. `video.json`: the duration, the voices, `embeddedVoice` (the voice inside `video.webm`), and each chapter with its start, end, title and section id.
+      5. `audio-<voice>.webm`: one Opus narration track for each voice, when there is narration. Keep the audio file of each line in a cache folder, so that a rebuild can reuse it.
    4. A webapp from design.md gets a "Video" section (see section 9). A subject with no webapp gets a small page with only the player.
 
 3. Steps
@@ -129,6 +130,7 @@ A reference implementation is in [video/](./video/README.md), with two worked ex
    6. Make one audio file for each beat, named by its chapter and beat number. Store a hash of the spoken text, the voice and the speed with each file. Make a file again only when its hash changes.
    7. Measure the length of each file with ffprobe. Do not guess it.
    8. Normalize the loudness of the full track to about -16 LUFS.
+   9. Add a short fade to each line before you mix it: 10 ms at the start and 15 ms at the end (the ffmpeg `afade` filter, after `aresample=48000`). A TTS line can start or stop on a sample that is not zero, and the viewer then hears a click at each line.
 
 7. The timeline
    1. Build the timeline from the storyboard, in order. Each beat starts when the beat before it ends.
@@ -144,24 +146,27 @@ A reference implementation is in [video/](./video/README.md), with two worked ex
 
 8. Render and mix
    1. Draw the frames in a headless browser (for example Chromium through Playwright) or with the engine's own renderer. Take frames in batches and send them to ffmpeg through a pipe. Do not write thousands of image files to the disk.
-   2. Get ffmpeg as a pinned package (for example `ffmpeg-static`) or a static build. Then the build does not depend on the system.
-   3. Encode with H.264, `-pix_fmt yuv420p`, `-movflags +faststart`, `-crf 20`, and `-tune animation`. `+faststart` lets a browser play the video before it has loaded the whole file.
-   4. Mix the audio. Place each audio file at the start time of its beat (the ffmpeg `adelay` and `amix` filters), then encode AAC at 128 to 160 kbit/s. Write one track for each voice, `audio-<voice>.m4a`. Keep `video.mp4` without sound, and put the default voice in `video-subtitled.mp4`.
+   2. Get ffmpeg as a pinned package (for example `ffmpeg-static`) or a static build (for example a static ffmpeg 7 build, which also has ffprobe). Then the build does not depend on the system. Check that the build has `libvpx-vp9` and `libopus`.
+   3. Render to a silent intermediate file first, and keep it in the cache folder. Then encode it to VP9: `-c:v libvpx-vp9 -b:v 0 -crf 34 -row-mt 1 -deadline good -cpu-used 4 -pix_fmt yuv420p -an`. Encode again only when the intermediate file is newer than the VP9 copy.
+   4. Mix the audio. Place each audio file at the start time of its beat (the ffmpeg `adelay` and `amix` filters, with the fades of 6.9), then encode Opus: `-c:a libopus -b:a 64k -application voip`. Write one track for each voice, `audio-<voice>.webm`. Copy the VP9 video and the default voice into `video.webm` and `video-subtitled.webm` with `-c copy`. Do not encode again.
    5. Draw the subtitles into the second copy in the same renderer as the scenes, at the bottom centre, in white on a half-black rounded box, at most two lines.
    6. Write `subtitles.vtt`, `chapters.vtt` and `video.json` from the timeline.
    7. Add an npm script for each mode:
       1. `video:info`: print the chapters and the cues with their times.
       2. `video:preview -- <t1,t2,...>`: write PNG frames at those times.
       3. `video:build`: render the full video and all the files.
+      4. `video:remix`: mix the voices again and write the outputs from the cached silent render, with no new frames. Use it after a change to the lexicon, the voices or the mix. It makes TTS again only for the lines whose hash changed.
+   8. In a shell loop, run ffmpeg with `-y` and with its input from `/dev/null` (`ffmpeg ... < /dev/null`). Without `-y` it waits for an answer to "overwrite?". Without `/dev/null` it reads the next lines of the loop as keys.
 
 9. The player page
-   1. Use the HTML video element with these children: `<source>` for `video.mp4`, `<track kind="subtitles" default>` for `subtitles.vtt`, and `<track kind="chapters">` for `chapters.vtt`.
+   1. Use one HTML video element for `video.webm`. Do not add `<track>` children (see 9.10). Read the chapters from `video.json`.
    2. Put a chapter list next to the player. Use a Bootstrap list-group. Each item shows the number, the title and the start time. A click moves the video to the start and plays it. The item of the current chapter is active while the video plays.
    3. Each chapter item with a section id links to that section of the webapp. Each section of the webapp that has a chapter shows a "Watch this part" link that opens the video at the start of the chapter. Read the start times from `video.json`, so that the links follow a new render.
-   4. Accept a start time in the URL, for example `#video&t=95`.
-   5. Add a link to download `video-subtitled.mp4`.
-   6. Make sure that the active list item keeps all its text readable.
-   7. Make seeking work on every static server. Do not set the video URL directly. Send one request for the first byte first:
+   4. Accept a start time in the URL fragment, for example `#video&t=95`. Accept plain seconds (`95`), minutes and seconds (`1:35`, `1:02:03`) and units (`1m35s`, `2h`, `90s`). Ignore a value that is not a time.
+   5. Add a link to download `video-subtitled.webm`.
+   6. Add a "Copy link at this time" button. It copies `<page>#<section>&t=<XmYYs>` for the current second (with `mode=video` when the app has a text view, see 9.11). If the clipboard is blocked, show the link in a prompt.
+   7. Make sure that the active list item keeps all its text readable.
+   8. Make seeking work on every static server. Do not set the video URL directly. Send one request for the first byte first:
 
       ```js
       // A server with Range support answers 206 with 1 byte.
@@ -179,9 +184,19 @@ A reference implementation is in [video/](./video/README.md), with two worked ex
       1. Servers with Range support include sirv, `vite preview`, nginx, GitHub Pages and most object stores. The test costs one byte, and the video starts before it has loaded.
       2. Python `http.server` has no Range support. The test response is the full file, so the page uses it as a blob. Seeking works, but playback starts only after the full download. Show the progress of the download while it runs.
       3. A blob stays in memory while the page is open. This is fine for a short video of a few tens of megabytes. For a long video, use a server with Range support.
-   8. When there is more than one voice, show a voice list with a "No voice" item, and keep the choice in the browser. Play the voice in an audio element that follows the video: play, pause, seek and rate. Move it back to the video time when the two differ by more than about 0.15 seconds. Load the audio file the same way as the video (9.7).
+   9. When there is more than one voice, show a voice list with a "No voice" item, and keep the choice in the browser.
+      1. The default voice is inside `video.webm`, so the picture and the voice play from one element. A click on play starts the sound in every browser, and nothing needs to stay in sync.
+      2. Do not play the default voice from a separate audio element. Firefox can block the play of a second element that the click did not start (its autoplay rule), and each move back into sync makes a click in the sound.
+      3. For another voice, mute the video and play `audio-<voice>.webm` in an audio element that follows the video: play, pause, seek, rate and volume. Move it back to the video time only when the two differ by more than about 0.3 seconds. Load the audio file the same way as the video (9.8).
+      4. "No voice" mutes the video. If the viewer unmutes the player while "No voice" is picked, select the default voice again.
 
-   9. Start with the subtitles off. Let the viewer turn them on and off and style them: size, style (dark box, outline, plain), colour, and position (bottom or top). Keep the choice in the browser. The `::cue` style of the browser's own subtitles is not the same in each browser, so do not add a `<track>` element: the browser then shows its own subtitle menu, and its cues conflict with yours. Fetch `subtitles.vtt`, parse it, and draw the cue for `video.currentTime` in a layer over the video, on each frame while it plays. Size the text from the width of the video (`cqw` units). Put bottom subtitles near the true bottom (about 4%), and lift them above the browser's control bar only while that bar shows: when the video is paused, and for about 2.5 seconds after the pointer moves. The browser's own fullscreen shows only the video element and hides that layer, so put the video and the layer in one box and make that box fullscreen.
+   10. Start with the subtitles off. Let the viewer turn them on and off and style them: size, style (dark box, outline, plain), colour, and position (bottom or top). Keep the choice in the browser. The `::cue` style of the browser's own subtitles is not the same in each browser, so do not add a `<track>` element: the browser then shows its own subtitle menu, and its cues conflict with yours. Fetch `subtitles.vtt`, parse it, and draw the cue for `video.currentTime` in a layer over the video, on each frame while it plays. Size the text from the width of the video (`cqw` units). Put bottom subtitles near the true bottom (about 4%), and lift them above the browser's control bar only while that bar shows: when the video is paused, and for about 2.5 seconds after the pointer moves. The browser's own fullscreen shows only the video element and hides that layer, so put the video and the layer in one box and make that box fullscreen.
+   11. An app can also have a text version of each section (see design.md). Then show a Video / Text switch, and name the view in the URL fragment: `#<section>&mode=video` or `#<section>&mode=text`.
+       1. Pick the view in this order: the `mode` in the URL, then the last view in this browser (localStorage), then video.
+       2. A `mode` from a URL also becomes the saved view.
+       3. Write the current view into the address bar on each section change and each switch, so that a copied address opens the same view.
+       4. Links to a time ("Watch this part", the copy button) add `mode=video`.
+       5. An app with no text view shows no switch and writes no `mode`.
 
 10. Check your work
     1. Facts: each statement in the video has a source in the storyboard. For software, each name exists in the code.
@@ -198,7 +213,9 @@ A reference implementation is in [video/](./video/README.md), with two worked ex
        2. A click on a chapter moves to its start.
        3. The subtitles show and turn off.
        4. The links to and from the sections work.
-    7. Seeking: jump to the last chapter and check that the video plays from there. Do this on the server that you use (see 9.7).
+       5. The sound plays after a click on play, in Firefox and in Chromium. In a headless browser, an autoplay check (for example "is the audio playing?" with no click) does not give a true result. Test with a real click, with Playwright in both browsers.
+       6. A copied time link opens at that time, and a `mode` link opens that view.
+    7. Seeking: jump to the last chapter and check that the video plays from there. Do this on the server that you use (see 9.8).
        1. On a server with Range support, the network panel shows a 206 answer for the first-byte test, and `video.currentSrc` is the file URL.
        2. On a server with no Range support, such as Python `http.server`, the test answers 200, and `video.currentSrc` starts with `blob:`.
        3. To see which kind of server you have, run `curl -s -H "Range: bytes=0-0" -o /dev/null -w "%{http_code}" <url>`. 206 means Range support. 200 means none.
@@ -210,7 +227,7 @@ A reference implementation is in [video/](./video/README.md), with two worked ex
     3. Do not put model weights or generated audio in git. Put the audio in the build output, or keep it in a cache folder that git ignores.
     4. A canvas uses the fonts that are loaded. Wait for `document.fonts.ready` before the first frame. A frame drawn before that has the wrong font.
     5. Text measured per character for a "write on" effect is slow. Measure each string one time and keep the result.
-    6. A browser does not play a video file that has no `+faststart` until the whole file loads.
+    6. A browser that blocks autoplay plays the video but not a separate audio element. Keep the default voice inside the video file (9.9).
     7. Rendering at 30 frames each second for 5 minutes is 9,000 frames. Render in batches. Show the progress in a log file, and start the render in the background.
     8. A frame in the full render that is different from its preview shows that the engine has hidden state. Fix the engine, not the scene.
 
@@ -225,7 +242,7 @@ A reference implementation is in [video/](./video/README.md), with two worked ex
     2. It has two renderers for one storyboard: `canvas` (`video/canvas-engine.js`, drawn in headless Chromium) and `manim` (`video/manim/storyboard_scene.py`, run in the Manim Community container with no network).
     3. A scene file gives one animation function for each beat. The build stops if the number of functions and beats is not the same.
     4. Narration is optional. List `voices` in the storyboard. The default engine is Kokoro-82M through kokoro-onnx, in a container with no network (`video/tts/`). `tts: command` with `TTS_COMMAND` uses any other local engine (section 6).
-    5. `shared/video-player.ts` is the player of section 9, with the Range check of 9.7. `shared/shell.ts` shows "Watch this part" under each section that has a chapter.
+    5. `shared/video-player.ts` is the player of section 9, with the Range check of 9.8, the voice modes of 9.9, the start times of 9.4 (`parseStartTime`, `formatStartTime`) and the copy button of 9.6. `shared/shell.ts` shows "Watch this part" under each section that has a chapter. `shared/view-mode.ts` is the Video / Text switch of 9.11; a section turns it on with `hasTextView: true`.
     6. Worked examples:
        1. `examples/rate-limiter/video/`: canvas, six chapters, about two minutes, four voices.
        2. `examples/unique-id-generator/video/`: Manim, four chapters with formulas and a bit layout, four voices.

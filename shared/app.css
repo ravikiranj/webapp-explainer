@@ -680,3 +680,31 @@ body {
   text-shadow: 0 0 3px #000, 0 0 3px #000, 0.06em 0.06em 0 #000, -0.06em -0.06em 0 #000, 0.06em -0.06em 0 #000, -0.06em 0.06em 0 #000;
 }
 .video-subs[data-look='plain'] .video-subs-line { text-shadow: 0 0.05em 0.15em rgba(0, 0, 0, 0.8); }
+
+/* The Video / Text switch in the left panel, for an app with a text version. Always on a dark background. */
+.view-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 8px 0;
+  color: var(--sb-dim);
+  font-size: 0.82rem;
+}
+
+.view-row .view-toggle {
+  flex: 1;
+}
+
+.view-row .view-toggle .btn {
+  flex: 1;
+}
+
+.view-row .view-toggle .btn-outline-secondary {
+  border-color: var(--sb-line);
+  color: var(--sb-ink);
+}
+
+.view-row .view-toggle .btn-outline-secondary:hover {
+  background: var(--sb-hover);
+  color: #ffffff;
+}

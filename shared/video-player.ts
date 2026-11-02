@@ -16,7 +16,7 @@ export interface VideoChapter {
 export interface VideoVoice {
   readonly id: string;
   readonly label: string;
-  /** The audio file, next to video.mp4. */
+  /** The audio file (Opus in WebM), next to video.webm. */
   readonly file: string;
 }
 
@@ -25,6 +25,8 @@ export interface VideoInfo {
   readonly duration: number;
   /** The narration tracks. The first is the default. Empty for a video with subtitles only. */
   readonly voices?: VideoVoice[];
+  /** The voice that video.webm carries in its own audio track; absent in older builds. */
+  readonly embeddedVoice?: string | null;
   readonly chapters: VideoChapter[];
 }
 
@@ -86,6 +88,32 @@ function readSubtitleStyle(): SubtitleStyle {
   } catch {
     return { ...SUBS_DEFAULT };
   }
+}
+
+/**
+ * Reads a start time from a link: plain seconds (95), minutes and seconds (1:35, 1:02:03), or units (1m35s, 2h, 90s).
+ * Returns NaN when the text is not a time.
+ */
+export function parseStartTime(text: string | null | undefined): number {
+  const t = (text ?? '').trim().toLowerCase();
+  if (/^\d+(\.\d+)?$/.test(t)) {
+    return Number(t);
+  }
+  if (/^\d+(:\d{1,2}){1,2}$/.test(t)) {
+    return t.split(':').reduce((sum, part) => sum * 60 + Number(part), 0);
+  }
+  const m = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+(?:\.\d+)?)s)?$/.exec(t);
+  if (m && (m[1] || m[2] || m[3])) {
+    return Number(m[1] ?? 0) * 3600 + Number(m[2] ?? 0) * 60 + Number(m[3] ?? 0);
+  }
+  return NaN;
+}
+
+/** Writes a time for a link as 1m35s (or 35s), which reads well and parseStartTime reads back. */
+export function formatStartTime(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds));
+  const m = Math.floor(s / 60);
+  return m ? `${m}m${String(s % 60).padStart(2, '0')}s` : `${s}s`;
 }
 
 const clock = (seconds: number): string =>
@@ -171,15 +199,29 @@ export async function setSeekableSource(
  * @param base the folder of the video files
  * @returns the section
  */
-export function videoSection(info: Promise<VideoInfo | null>, base = './video/'): Section {
+export interface VideoSectionOptions {
+  readonly id?: string;
+  readonly group?: string;
+  readonly title?: string;
+  readonly icon?: string;
+  readonly badge?: string;
+  readonly caption?: string;
+  /** Text and parts to show above the player. */
+  readonly intro?: (el: HTMLElement) => void;
+  /** Parts to show in the right column, under the chapter list (below the player on narrow screens). */
+  readonly aside?: (el: HTMLElement) => void;
+}
+
+export function videoSection(info: Promise<VideoInfo | null>, base = './video/', options: VideoSectionOptions = {}): Section {
   return {
-    id: 'video',
-    group: 'Watch',
-    title: 'Video',
-    icon: 'bi-play-btn',
-    badge: 'chapters',
-    caption: 'A short video with a choice of voice and optional subtitles. Select a chapter to jump to it. Each chapter links to its section.',
+    id: options.id ?? 'video',
+    group: options.group ?? 'Watch',
+    title: options.title ?? 'Video',
+    icon: options.icon ?? 'bi-play-btn',
+    badge: options.badge ?? 'chapters',
+    caption: options.caption ?? 'A short video with a choice of voice and optional subtitles. Select a chapter to jump to it. Each chapter links to its section.',
     render(el, params) {
+      options.intro?.(el);
       let free = (): void => undefined;
       let gone = false;
       const status = h('div', { class: 'small text-body-secondary mt-2' }, ['Loading the video…']);
@@ -249,7 +291,7 @@ export function videoSection(info: Promise<VideoInfo | null>, base = './video/')
         video.addEventListener(ev, showCue);
       }
 
-      const onSwitch = h('input', { class: 'form-check-input', type: 'checkbox', role: 'switch', id: 'subs-on' }) as HTMLInputElement;
+      const onSwitch = h('input', { class: 'form-check-input', type: 'checkbox', role: 'switch', id: `subs-on-${options.id ?? 'video'}` }) as HTMLInputElement;
       onSwitch.checked = style.on;
       onSwitch.addEventListener('change', () => {
         style = { ...style, on: onSwitch.checked };
@@ -286,7 +328,7 @@ export function videoSection(info: Promise<VideoInfo | null>, base = './video/')
       const subsBar = h('div', { class: 'd-flex flex-wrap align-items-center gap-2 mt-2' }, [
         h('div', { class: 'form-check form-switch mb-0 me-1' }, [
           onSwitch,
-          h('label', { class: 'form-check-label small', for: 'subs-on' }, [icon('bi-badge-cc', 'me-1'), 'Subtitles'])
+          h('label', { class: 'form-check-label small', for: `subs-on-${options.id ?? 'video'}` }, [icon('bi-badge-cc', 'me-1'), 'Subtitles'])
         ]),
         ...selects.map((sel, i) => h('div', { class: 'input-group input-group-sm', style: 'width: auto' }, [
           h('span', { class: 'input-group-text' }, [SUBS_CHOICES[i].label]),
@@ -296,21 +338,37 @@ export function videoSection(info: Promise<VideoInfo | null>, base = './video/')
       ]);
       applyStyle();
       const list = h('div', { class: 'list-group' });
-      // The narration is a separate track, so that the viewer can change the voice.
+      // The default voice is in video.webm. Another voice plays from this element, kept on the video's clock.
       const audio = h('audio', { preload: 'auto' }) as HTMLAudioElement;
       const voiceSelect = h('select', { class: 'form-select form-select-sm', 'aria-label': 'Voice' }) as HTMLSelectElement;
       const voiceBox = h('div', { class: 'd-flex align-items-center gap-2 mb-2 d-none' }, [
         h('label', { class: 'small text-body-secondary text-nowrap' }, [icon('bi-mic', 'me-1'), 'Voice']),
         voiceSelect
       ]);
-      const download = h('a', { href: `${base}video-subtitled.mp4`, download: '' }, [
+      // Copies a link that opens this video at the current second, in video mode.
+      const share = h('button', { type: 'button', class: 'btn btn-link btn-sm p-0 me-3 align-baseline' }, [icon('bi-link-45deg', 'me-1'), 'Copy link at this time']);
+      share.addEventListener('click', () => {
+        const at = formatStartTime(video.currentTime);
+        const link = `${location.origin}${location.pathname}#${options.id ?? 'video'}&mode=video&t=${at}`;
+        const done = (text: string): void => {
+          share.lastChild!.textContent = text;
+          window.setTimeout(() => { share.lastChild!.textContent = 'Copy link at this time'; }, 2000);
+        };
+        navigator.clipboard.writeText(link).then(() => done(`Copied the link at ${clock(video.currentTime)}`), () => {
+          window.prompt('Copy this link:', link);
+          done('Copy link at this time');
+        });
+      });
+      const download = h('a', { href: `${base}video-subtitled.webm`, download: '' }, [
         icon('bi-download', 'me-1'),
         'Download a copy with the subtitles drawn in'
       ]);
+      const side = h('div', { class: 'col-xl-4' }, [voiceBox, list, audio]);
+      options.aside?.(side);
       el.append(
         h('div', { class: 'row g-3' }, [
-          h('div', { class: 'col-xl-8' }, [stage, subsBar, status, h('div', { class: 'small mt-1' }, [download])]),
-          h('div', { class: 'col-xl-4' }, [voiceBox, list, audio])
+          h('div', { class: 'col-xl-8' }, [stage, subsBar, status, h('div', { class: 'small mt-1' }, [share, download])]),
+          side
         ])
       );
 
@@ -350,27 +408,30 @@ export function videoSection(info: Promise<VideoInfo | null>, base = './video/')
           });
         };
         video.addEventListener('timeupdate', mark);
-        const start = Number(params?.get('t'));
+        const start = parseStartTime(params?.get('t'));
         if (Number.isFinite(start) && start > 0) {
           video.addEventListener('loadedmetadata', () => { video.currentTime = start; mark(); }, { once: true });
         }
-        free = await setSeekableSource(video, `${base}video.mp4`, (share) => {
+        free = await setSeekableSource(video, `${base}video.webm`, (share) => {
           status.textContent = `Loading the video: ${Math.round(share * 100)}%`;
         });
         const ready = `${clock(v.duration)} · ${v.chapters.length} chapters`;
         status.textContent = ready;
         mark();
 
-        // Keep the voice on the video's clock. The video is the leader: the audio
-        // follows its play, pause, seek and rate, and is moved back when it drifts.
+        // A voice inside video.webm plays with the picture and needs no sync. Another voice plays from
+        // the audio element; the video's own track is then muted and the audio follows the video's
+        // play, pause, seek, rate and volume, and is moved back when it drifts.
         const voices = v.voices ?? [];
+        const embedded = v.embeddedVoice ?? null;
+        let mode: 'video' | 'track' | 'none' = 'video';
         let freeAudio = (): void => undefined;
         const follow = (): void => {
-          if (!audio.src) {
+          if (mode !== 'track' || !audio.src) {
             return;
           }
           audio.playbackRate = video.playbackRate;
-          if (Math.abs(audio.currentTime - video.currentTime) > 0.15) {
+          if (Math.abs(audio.currentTime - video.currentTime) > 0.3) {
             audio.currentTime = video.currentTime;
           }
           if (video.paused || video.ended) {
@@ -384,8 +445,15 @@ export function videoSection(info: Promise<VideoInfo | null>, base = './video/')
         }
         video.addEventListener('timeupdate', follow);
         video.addEventListener('volumechange', () => {
-          audio.volume = video.volume;
-          audio.muted = video.muted;
+          if (mode === 'track') {
+            audio.volume = video.volume;
+            video.muted = true;
+          } else if (mode === 'none' && !video.muted && embedded) {
+            // Unmuting the player while "No voice" is picked means: turn the voice back on.
+            mode = 'video';
+            voiceSelect.value = embedded;
+            localStorage.setItem(VOICE_KEY, embedded);
+          }
         });
         const useVoice = async (id: string): Promise<void> => {
           freeAudio();
@@ -394,10 +462,19 @@ export function videoSection(info: Promise<VideoInfo | null>, base = './video/')
           audio.removeAttribute('src');
           audio.load();
           localStorage.setItem(VOICE_KEY, id);
-          const voice = voices.find((x) => x.id === id);
-          if (!voice) {
+          if (id === embedded) {
+            mode = 'video';
+            video.muted = false;
             return;
           }
+          const voice = voices.find((x) => x.id === id);
+          if (!voice) {
+            mode = 'none';
+            video.muted = true;
+            return;
+          }
+          mode = 'track';
+          video.muted = Boolean(embedded);
           const wasPlaying = !video.paused;
           video.pause();
           freeAudio = await setSeekableSource(audio, `${base}${voice.file}`, (share) => {
@@ -408,6 +485,7 @@ export function videoSection(info: Promise<VideoInfo | null>, base = './video/')
             freeAudio();
             return;
           }
+          audio.volume = video.volume;
           audio.currentTime = video.currentTime;
           if (wasPlaying) {
             void video.play();

@@ -69,6 +69,10 @@ SKIP_VIDEO=1 bash build.sh
 Do this after a change to a storyboard, a scene file, or a lexicon. The deploy
 workflow fails at `release.mjs check` until a new release is published.
 
+Do it also after a change to the output files, for example the move from MP4 to
+WebM. `check` compares only the source files, so it passes, but the player then asks
+for files that the old release does not have.
+
 1. Install the tools, one time. You need Node 20 or newer, Docker, curl and tar.
 
    ```bash
