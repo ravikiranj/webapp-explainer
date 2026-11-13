@@ -4,6 +4,10 @@ A set of small static webapps. Each app explains one subject with short text
 and many charts, following the template in [design.md](./design.md). A landing
 index showcases every app, and the whole thing deploys to GitHub Pages.
 
+To build a refreshable report or dashboard from a set of records, use
+[report-design.md](./report-design.md). It extends the webapp template with a data pipeline, slides with drill-down,
+palettes, and tests.
+
 To turn a subject into a short narrated video with chapters and subtitles, use
 [video-design.md](./video-design.md). It extends the webapp template. The reference video maker is in
 [video/](./video/README.md): a canvas renderer for diagrams and a Manim renderer for math.
@@ -18,6 +22,7 @@ The rate-limiter and unique-id-generator apps each have a Video section built wi
 | [unique-id-generator](./examples/unique-id-generator/) | Unique IDs from one node to many regions | mock teaching data |
 | [insulin-resistance](./examples/insulin-resistance/) | Insulin resistance and higher South Asian risk | real, cited data |
 | [chess-endgames](./examples/chess-endgames/) | An interactive endgame trainer up to 1800 ELO | bundled Stockfish engine |
+| [support-report](./examples/support-report/) | A refreshable report: generator, data file, slides, checks (see [report-design.md](./report-design.md)) | mock data from a seeded generator |
 
 Each app is a Vite + TypeScript project in `examples/<name>/output/`, built with
 `base: './'` so it works under any path. Each app also has a "The problem"
@@ -45,6 +50,7 @@ site/
     unique-id-generator/
     insulin-resistance/
     chess-endgames/           includes a bundled Stockfish engine (engine/)
+    support-report/
 ```
 
 ## Videos

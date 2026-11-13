@@ -10,6 +10,7 @@ import 'bootstrap';
 import '../../shared/app.css';
 import { marked } from 'marked';
 import designDoc from './design.md?raw';
+import reportDesignDoc from './report-design.md?raw';
 import videoDesignDoc from './video-design.md?raw';
 import videoMakerDoc from './video-maker.md?raw';
 import { APPS } from './apps.ts';
@@ -23,6 +24,7 @@ import { mountShell } from '../../shared/shell.ts';
 const REPO_URL = 'https://github.com/ravikiranj/webapp-explainer/blob/main/';
 const DOC_TABS: Record<string, string> = {
   'design.md': '#design',
+  'report-design.md': '#report-design',
   'video-design.md': '#video-design',
   'video/README.md': '#video-maker',
   'video/': '#video-maker'
@@ -76,6 +78,19 @@ const design: Section = {
   caption: 'Every example app in the list is built to this design.',
   render(el) {
     el.append(renderDoc(designDoc, ''));
+  }
+};
+
+/** The design for a report or dashboard that a program refreshes. */
+const reportDesign: Section = {
+  id: 'report-design',
+  group: 'Guide',
+  title: 'Report design',
+  icon: 'bi-graph-up',
+  badge: 'template',
+  caption: 'How to build a refreshable report or dashboard: data pipeline, slides, drill-down, palettes, tests.',
+  render(el) {
+    el.append(renderDoc(reportDesignDoc, ''));
   }
 };
 
@@ -155,5 +170,5 @@ mountShell({
   subtitle: 'concept explainer apps',
   brandIcon: 'bi-binoculars',
   homeLink: false,
-  sections: [design, videoDesign, videoMaker, ...appSections]
+  sections: [design, reportDesign, videoDesign, videoMaker, ...appSections]
 });

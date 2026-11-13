@@ -11,6 +11,7 @@
 #       unique-id-generator/
 #       insulin-resistance/
 #       chess-endgames/
+#       support-report/
 #
 # Every app is built with base './' so it works under any path on GitHub
 # Pages. The landing page links to ./examples/<slug>/ with relative paths.
@@ -20,7 +21,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
-EXAMPLES=(rate-limiter traffic-signal-timing unique-id-generator insulin-resistance chess-endgames)
+EXAMPLES=(rate-limiter traffic-signal-timing unique-id-generator insulin-resistance chess-endgames support-report)
 
 echo "==> Cleaning site/"
 rm -rf site
@@ -28,6 +29,7 @@ mkdir -p site/examples
 
 echo "==> Building landing index"
 cp design.md landing/src/design.md
+cp report-design.md landing/src/report-design.md
 cp video-design.md landing/src/video-design.md
 cp video/README.md landing/src/video-maker.md
 ( cd landing && npm ci --no-fund --no-audit && npm run build )

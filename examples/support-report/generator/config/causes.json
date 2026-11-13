@@ -1,0 +1,10 @@
+{
+  "rules": [
+    ["^Dependency", "dependency"],
+    ["^Our issue", "ours"],
+    ["^Transient", "transient"],
+    ["^Alarm", "false-alarm"],
+    [".*", "unclear"]
+  ],
+  "week": { "weekday": 2, "hour": 12, "note": "Wednesday 12:00 UTC" }
+}

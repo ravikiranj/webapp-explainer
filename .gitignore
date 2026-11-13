@@ -20,6 +20,7 @@ __pycache__/
 .DS_Store
 *.log
 landing/src/design.md
+landing/src/report-design.md
 landing/src/video-design.md
 landing/src/video-maker.md
 

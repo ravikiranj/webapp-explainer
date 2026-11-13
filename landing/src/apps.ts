@@ -16,6 +16,18 @@ export interface AppCard {
 
 export const APPS: readonly AppCard[] = [
   {
+    slug: 'support-report',
+    title: 'Support Queue Report',
+    subtitle: 'a refreshable report',
+    icon: 'bi-bar-chart-line',
+    domain: 'Report',
+    summary:
+      'A reference report built to report-design.md: a generator program makes the data file, and the site shows it as slides with filters, ' +
+      'a month and week view, cause and resolution patterns, quiet drill-down lists, palettes, and downloads.',
+    dataKind: 'mock',
+    stages: ['generator', 'data file', 'slides', 'checks']
+  },
+  {
     slug: 'rate-limiter',
     title: 'Rate Limiting',
     subtitle: 'one node to many regions',
