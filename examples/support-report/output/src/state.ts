@@ -12,6 +12,7 @@ const VALID: Record<string, (v: string) => boolean> = {
   palette: (v) => PALETTE_KEYS.includes(v),
   cols: (v) => /^[a-z]+(,[a-z]+)*$/.test(v),
   sort: (v) => /^[a-z]+:(asc|desc)$/.test(v),
+  rows: (v) => ['10', '25', '50', '100', '250', '500'].includes(v),
   widths: (v) => /^[a-z]+:\d{2,4}(,[a-z]+:\d{2,4})*$/.test(v),
   size: (v) => /^\d{2}(\.5)?$/.test(v) && Number(v) >= 12 && Number(v) <= 22
 };

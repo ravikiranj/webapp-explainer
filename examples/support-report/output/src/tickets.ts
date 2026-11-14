@@ -31,7 +31,8 @@ export const COLUMNS: Column[] = [
 ];
 export const DEFAULT_COLS = ['id', 'title', 'item', 'sev', 'c', 'cause'];
 const BY_KEY = new Map(COLUMNS.map((c) => [c.key, c]));
-const MAX_ROWS = 300;
+export const PAGE_SIZES = [10, 25, 50, 100, 250, 500];
+const pageSize = (): number => Number(get('rows', '25'));
 const MIN_WIDTH = 48;
 
 /** The widths that the reader set, in px. An empty map means that the browser sizes the columns. */
@@ -69,9 +70,9 @@ export function mountColumnPane(host: HTMLElement): void {
   const draw = (): void => {
     const vis = visibleColumns().map((c) => c.key);
     const order = [...vis, ...COLUMNS.map((c) => c.key).filter((k) => !vis.includes(k))];
-    host.innerHTML = '<p class="set-note">Pick the columns of the ticket list. To move a column, drag its header in the list, or press Alt and an arrow key on the header.</p><div class="rp-cols-body">' +
+    host.innerHTML = `<div class="set-h">Tickets on a page</div><div class="set-row" id="rp-rows">${PAGE_SIZES.map((n) => `<button type="button" data-rows="${n}" aria-pressed="${n === pageSize()}">${n}</button>`).join('')}</div><div class="set-h">Columns</div>` + '<p class="set-note">Pick the columns of the ticket list. To move a column, drag its header in the list, or press Alt and an arrow key on the header.</p><div class="rp-cols-body">' +
       order.map((k) => `<label><input type="checkbox" data-col="${k}"${vis.includes(k) ? ' checked' : ''}> ${BY_KEY.get(k)!.label}</label>`).join('') +
-      '</div><button type="button" data-reset class="rp-reset">Reset columns, widths and sort</button>';
+      '</div><button type="button" data-reset class="rp-reset">Reset columns, widths, sort and page size</button>';
   };
   host.addEventListener('change', (e) => {
     const input = e.target as HTMLInputElement;
@@ -82,8 +83,15 @@ export function mountColumnPane(host: HTMLElement): void {
     redrawList?.();
   });
   host.addEventListener('click', (e) => {
+    const rowsBtn = (e.target as HTMLElement).closest<HTMLElement>('[data-rows]');
+    if (rowsBtn) {
+      set({ rows: rowsBtn.dataset.rows as string });
+      draw();
+      redrawList?.();
+      return;
+    }
     if ((e.target as HTMLElement).closest('[data-reset]')) {
-      set({ cols: DEFAULT_COLS.join(','), sort: 'c:desc', widths: '' });
+      set({ cols: DEFAULT_COLS.join(','), sort: 'c:desc', widths: '', rows: '25' });
       draw();
       redrawList?.();
     }
@@ -96,6 +104,19 @@ export function mountColumnPane(host: HTMLElement): void {
 export function ticketList(list: HTMLElement, toolbar: HTMLElement): (tickets: Ticket[]) => void {
   let current: Ticket[] = [];
   let dragging = '';
+  let page = 0;
+  let lastSize = pageSize();
+  const pager = document.createElement('div');
+  pager.className = 'rp-pager';
+  list.insertAdjacentElement('afterend', pager);
+  pager.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-go]');
+    if (b && !b.disabled) {
+      const last = Math.max(0, Math.ceil(current.length / pageSize()) - 1);
+      page = { first: 0, prev: page - 1, next: page + 1, last }[b.dataset.go as string] ?? page;
+      draw(current);
+    }
+  });
   const open = document.createElement('button');
   open.type = 'button';
   open.className = 'rp-colbtn';
@@ -132,11 +153,19 @@ export function ticketList(list: HTMLElement, toolbar: HTMLElement): (tickets: T
   });
 
   function draw(tickets: Ticket[]): void {
+    if (tickets !== current || pageSize() !== lastSize) {
+      page = 0; // a new selection, or a new page size, starts on the first page
+    }
+    lastSize = pageSize();
     current = tickets;
     const cols = visibleColumns();
     const s = sortState();
     const col = BY_KEY.get(s.key) as Column;
-    const rows = tickets.slice().sort((a, b) => s.dir * cmp(col.value(a), col.value(b)) || b.c - a.c).slice(0, MAX_ROWS);
+    const sorted = tickets.slice().sort((a, b) => s.dir * cmp(col.value(a), col.value(b)) || b.c - a.c);
+    const size = pageSize();
+    const pages = Math.max(1, Math.ceil(sorted.length / size));
+    page = Math.min(page, pages - 1);
+    const rows = sorted.slice(page * size, (page + 1) * size);
     const widths = widthState();
     const head = cols.map((c) => {
       const on = c.key === s.key;
@@ -146,6 +175,13 @@ export function ticketList(list: HTMLElement, toolbar: HTMLElement): (tickets: T
     const total = cols.reduce((a, c) => a + (widths.get(c.key) ?? 140), 0);
     list.innerHTML = `<table class="table table-sm table-hover${widths.size ? ' rp-fixed' : ''}"${widths.size ? ` style="width:${total}px"` : ''}><thead><tr>${head}</tr></thead><tbody>${rows.map((t) =>
       `<tr>${cols.map((c) => `<td${c.align === 'end' ? ' class="text-end"' : ''}>${esc(String(c.show ? c.show(t) : c.value(t)))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    const from = sorted.length ? page * size + 1 : 0, to = Math.min(sorted.length, (page + 1) * size);
+    pager.innerHTML = `<span class="rp-pager-info">Showing ${from}&ndash;${to} of ${sorted.length}</span><span class="rp-pager-nav">
+      <button type="button" data-go="first" aria-label="First page"${page === 0 ? ' disabled' : ''}>&laquo;</button>
+      <button type="button" data-go="prev" aria-label="Previous page"${page === 0 ? ' disabled' : ''}>&lsaquo; Prev</button>
+      <span class="rp-pager-page">Page ${page + 1} of ${pages}</span>
+      <button type="button" data-go="next" aria-label="Next page"${page >= pages - 1 ? ' disabled' : ''}>Next &rsaquo;</button>
+      <button type="button" data-go="last" aria-label="Last page"${page >= pages - 1 ? ' disabled' : ''}>&raquo;</button></span>`;
     list.querySelectorAll<HTMLElement>('th[data-key]').forEach((th) => {
       const key = th.dataset.key as string;
       th.addEventListener('keydown', (e) => {

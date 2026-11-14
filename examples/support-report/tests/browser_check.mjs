@@ -77,6 +77,33 @@ await page.keyboard.press('Escape');
 await page.waitForFunction(() => !document.getElementById('app-settings').open);
 if ((await heads()).includes('Region')) fail('hide a column in the settings');
 
+// the list is paged: a page size, a pager, and every record can be reached
+await page.evaluate(() => { location.hash = '#causes'; });
+await page.waitForTimeout(500);
+const firstRow = () => page.evaluate(() => document.querySelector('.rp-list tbody tr td').textContent);
+const pgRows = () => page.evaluate(() => document.querySelectorAll('.rp-list tbody tr').length);
+const info = () => page.evaluate(() => document.querySelector('.rp-pager-info').textContent);
+const r0 = await firstRow(), n0 = await pgRows();
+await page.click('.rp-pager [data-go="next"]');
+const r1 = await firstRow();
+console.log('pager', n0, 'rows;', await info(), '; first row', r0, '->', r1);
+if (n0 !== 25 || r0 === r1 || !/26/.test(await info())) fail('pager next');
+await page.click('.rp-pager [data-go="last"]');
+const lastInfo = await info();
+const listTotal = Number((await page.evaluate(() => document.querySelector('.rp-drawer summary').textContent)).match(/\((\d+)\)/)[1]);
+console.log("last page", lastInfo, "total", listTotal);
+if (!lastInfo.endsWith("of " + listTotal) || !new RegExp("\u2013" + listTotal + " ").test(lastInfo)) fail('last page reaches the last record');
+await page.click('#app-settings-button');
+await page.waitForSelector('#app-settings[open]');
+await page.click('.set-nav [data-pane="columns"]');
+await page.click('#rp-rows [data-rows="100"]');
+await page.keyboard.press('Escape');
+await page.waitForFunction(() => !document.getElementById('app-settings').open);
+console.log('page size 100 ->', await pgRows(), 'rows;', await info());
+if ((await pgRows()) !== 100 || !(await page.evaluate(() => location.hash.includes('rows=100')))) fail('page size setting');
+await page.evaluate(() => { location.hash = '#volume'; });
+await page.waitForTimeout(500);
+
 // a drag of the right edge of a header resizes that column, and does not sort or move it
 const wOf = (k) => page.evaluate((x) => document.querySelector(`.rp-list th[data-key="${x}"]`).getBoundingClientRect().width, k);
 const sortBefore = await page.evaluate(() => location.hash.match(/sort=[^&]+/)?.[0]);

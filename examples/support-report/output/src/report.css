@@ -16,7 +16,7 @@
 .rp-chart { width: 100%; height: clamp(22rem, 52vh, 40rem); }
 .rp-drawer { margin-top: 1rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--panel); }
 .rp-drawer > summary { padding: .45rem .9rem; color: var(--ink-dim); font-size: .85rem; cursor: pointer; }
-.rp-list { max-height: clamp(12rem, 32vh, 26rem); overflow: auto; font-size: .9rem; }
+.rp-list { overflow-x: auto; font-size: .9rem; }
 .rp-list table { margin: 0; }
 .rp-foot { margin-top: 1rem; color: var(--ink-dim); font-size: .8rem; }
 .rp-legend { display: flex; flex-wrap: wrap; gap: .9rem; margin-bottom: .6rem; color: var(--ink-dim); font-size: .85rem; }
@@ -48,3 +48,8 @@ th.rp-drag { opacity: .4; } th.rp-over { box-shadow: inset 3px 0 0 var(--accent)
 .rp-fixed { table-layout: fixed; } .rp-fixed td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rp-grip { position: absolute; top: 0; right: 0; bottom: 0; width: 7px; cursor: col-resize; touch-action: none; }
 .rp-grip:hover, .rp-grip:active { background: var(--accent); opacity: .6; }
+.rp-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; padding: .5rem .9rem; border-top: 1px solid var(--line); font-size: .85rem; color: var(--ink-dim); }
+.rp-pager-nav { display: inline-flex; align-items: center; gap: .35rem; }
+.rp-pager button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: .4rem; padding: .1rem .7rem; }
+.rp-pager button:disabled { opacity: .35; } .rp-pager button:not(:disabled):hover { background: var(--panel-2); }
+.rp-pager-page { min-width: 6rem; text-align: center; color: var(--ink); font-weight: 600; }

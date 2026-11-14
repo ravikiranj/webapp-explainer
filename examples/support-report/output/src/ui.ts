@@ -35,7 +35,7 @@ export function frame(el: HTMLElement, scope: string, footer: string): Frame {
     draw([]);
   };
   const showTickets = (title: string, tickets: Ticket[]): void => {
-    sum.textContent = `Tickets: ${title} (${tickets.length}${tickets.length > 300 ? ', first 300 shown' : ''})`;
+    sum.textContent = `Tickets: ${title} (${tickets.length})`;
     draw(tickets); // open in place; never scroll the page
   };
   return { controls, body, showTickets, clearTickets };
