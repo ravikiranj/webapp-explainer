@@ -44,3 +44,7 @@ th.rp-drag { opacity: .4; } th.rp-over { box-shadow: inset 3px 0 0 var(--accent)
 .rp-pal-name { flex: 0 0 8.5rem; }
 .rp-pal .rp-sw { flex: 1; margin: 0; } .rp-pal .rp-sw i { height: 1.1rem; }
 .rp-mini { flex: 0 0 7.5rem; width: 7.5rem; height: 2.4rem; }
+.rp-list th { position: relative; }
+.rp-fixed { table-layout: fixed; } .rp-fixed td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-grip { position: absolute; top: 0; right: 0; bottom: 0; width: 7px; cursor: col-resize; touch-action: none; }
+.rp-grip:hover, .rp-grip:active { background: var(--accent); opacity: .6; }

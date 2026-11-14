@@ -109,7 +109,8 @@ A reference implementation is in [examples/support-report/](./examples/support-r
         4. Give the list a maximum height with its own scroll, so that the chart stays in view.
         5. Make the columns of the list sortable. A click on a header sorts by that column, and a second click reverses the order. Mark the sorted header with an arrow and `aria-sort`. Make the headers reachable by keyboard.
         6. Let the reader choose the columns. Let the reader drag a column header to move the column, and give the keyboard the same with Alt and the left or right arrow. Do not use move buttons. Give the list a "Columns" chooser with a check box for each column, and a reset. At least one column stays on. Show only a few columns at the start, and offer the others, for example region, source, resolve time, cause field and resolution text. Never offer a column that holds private text.
-        7. Keep the columns and the sort order in the link state, so that a copied link opens the same list.
+        7. Make the columns resizable like the columns of a spreadsheet. Give each header a grip on its right edge. A drag of the grip changes the width of that column only, with a minimum width. Keep the table in a fixed layout once the reader resizes a column, and let the table scroll sideways when the columns are wider than the panel. A drag of the grip must not sort the list and must not move the column. Offer a reset for the widths with the reset for the columns.
+        8. Keep the columns, the widths and the sort order in the link state, so that a copied link opens the same list.
     6. Make a hover show the period, the count and the rate. For a week, show the range of dates, the incoming count for each day, and the share resolved.
     7. Offer a week view next to the month view when the team works in weeks. Label a week by the date that starts it. Mark the current period as partial.
     8. Put the method on a Method button, in a dialog. Keep the slide itself free of long text. A slide has at most one short lead line, and one line on the chart when a reader could misread it.
@@ -140,7 +141,7 @@ A reference implementation is in [examples/support-report/](./examples/support-r
     2. Write a browser check that runs in a headless browser against the local server. It must fail on any of these:
         1. A slide does not draw a chart or a table.
         2. A slide opens with an empty list, or a click on a chart element or a row does not change the list, or it scrolls the page.
-        3. A column header does not sort the list, or a drag of a column header does not move the column, or the column chooser does not show and hide columns.
+        3. A column header does not sort the list, or a drag of a column header does not move the column, or a drag of a header edge does not resize the column, or the column chooser does not show and hide columns.
         4. The left panel does not resize with the mouse and with the keyboard.
         5. The settings dialog does not open from the top right button, does not drag by its header, or does not resize by its corner.
         6. A filter does not change the count or the link.

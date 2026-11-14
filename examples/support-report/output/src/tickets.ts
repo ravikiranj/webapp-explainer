@@ -32,6 +32,20 @@ export const COLUMNS: Column[] = [
 export const DEFAULT_COLS = ['id', 'title', 'item', 'sev', 'c', 'cause'];
 const BY_KEY = new Map(COLUMNS.map((c) => [c.key, c]));
 const MAX_ROWS = 300;
+const MIN_WIDTH = 48;
+
+/** The widths that the reader set, in px. An empty map means that the browser sizes the columns. */
+function widthState(): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const part of get('widths', '').split(',').filter(Boolean)) {
+    const [k, w] = part.split(':');
+    if (BY_KEY.has(k)) {
+      m.set(k, Number(w));
+    }
+  }
+  return m;
+}
+const saveWidths = (m: Map<string, number>): void => set({ widths: [...m].map(([k, w]) => `${k}:${Math.round(w)}`).join(',') });
 
 /** The visible columns, in order. */
 export function visibleColumns(): Column[] {
@@ -57,7 +71,7 @@ export function mountColumnPane(host: HTMLElement): void {
     const order = [...vis, ...COLUMNS.map((c) => c.key).filter((k) => !vis.includes(k))];
     host.innerHTML = '<p class="set-note">Pick the columns of the ticket list. To move a column, drag its header in the list, or press Alt and an arrow key on the header.</p><div class="rp-cols-body">' +
       order.map((k) => `<label><input type="checkbox" data-col="${k}"${vis.includes(k) ? ' checked' : ''}> ${BY_KEY.get(k)!.label}</label>`).join('') +
-      '</div><button type="button" data-reset class="rp-reset">Reset columns and sort</button>';
+      '</div><button type="button" data-reset class="rp-reset">Reset columns, widths and sort</button>';
   };
   host.addEventListener('change', (e) => {
     const input = e.target as HTMLInputElement;
@@ -69,7 +83,7 @@ export function mountColumnPane(host: HTMLElement): void {
   });
   host.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).closest('[data-reset]')) {
-      set({ cols: DEFAULT_COLS.join(','), sort: 'c:desc' });
+      set({ cols: DEFAULT_COLS.join(','), sort: 'c:desc', widths: '' });
       draw();
       redrawList?.();
     }
@@ -123,11 +137,14 @@ export function ticketList(list: HTMLElement, toolbar: HTMLElement): (tickets: T
     const s = sortState();
     const col = BY_KEY.get(s.key) as Column;
     const rows = tickets.slice().sort((a, b) => s.dir * cmp(col.value(a), col.value(b)) || b.c - a.c).slice(0, MAX_ROWS);
+    const widths = widthState();
     const head = cols.map((c) => {
       const on = c.key === s.key;
-      return `<th data-key="${c.key}" draggable="true" title="Click to sort. Drag to move." class="${c.align === 'end' ? 'text-end ' : ''}rp-sort" tabindex="0" role="columnheader" aria-sort="${on ? (s.dir === 1 ? 'ascending' : 'descending') : 'none'}">${c.label}<span class="rp-arrow">${on ? (s.dir === 1 ? ' &#9650;' : ' &#9660;') : ''}</span></th>`;
+      const w = widths.get(c.key) ?? 140;
+      return `<th data-key="${c.key}" draggable="true" title="Click to sort. Drag to move. Drag the right edge to resize."${widths.size ? ` style="width:${w}px"` : ''} class=""${c.align === 'end' ? 'text-end ' : ''}rp-sort" tabindex="0" role="columnheader" aria-sort="${on ? (s.dir === 1 ? 'ascending' : 'descending') : 'none'}">${c.label}<span class="rp-arrow">${on ? (s.dir === 1 ? ' &#9650;' : ' &#9660;') : ''}</span><span class="rp-grip" role="separator" aria-orientation="vertical" aria-label="Resize ${c.label}"></span></th>`;
     }).join('');
-    list.innerHTML = `<table class="table table-sm table-hover"><thead><tr>${head}</tr></thead><tbody>${rows.map((t) =>
+    const total = cols.reduce((a, c) => a + (widths.get(c.key) ?? 140), 0);
+    list.innerHTML = `<table class="table table-sm table-hover${widths.size ? ' rp-fixed' : ''}"${widths.size ? ` style="width:${total}px"` : ''}><thead><tr>${head}</tr></thead><tbody>${rows.map((t) =>
       `<tr>${cols.map((c) => `<td${c.align === 'end' ? ' class="text-end"' : ''}>${esc(String(c.show ? c.show(t) : c.value(t)))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
     list.querySelectorAll<HTMLElement>('th[data-key]').forEach((th) => {
       const key = th.dataset.key as string;
@@ -142,6 +159,40 @@ export function ticketList(list: HTMLElement, toolbar: HTMLElement): (tickets: T
           moveColumn(key, vis[i + (e.key === 'ArrowLeft' ? -1 : 1)]);
           list.querySelector<HTMLElement>(`th[data-key="${key}"]`)?.focus();
         }
+      });
+      const grip = th.querySelector('.rp-grip') as HTMLElement;
+      grip.addEventListener('click', (e) => e.stopPropagation()); // a resize is not a sort
+      grip.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        th.draggable = false; // the grip resizes; it does not start a column drag
+        grip.setPointerCapture(e.pointerId);
+        const table = th.closest('table') as HTMLTableElement;
+        // Switch to fixed widths. Start from the widths that the browser gave.
+        const w = widthState();
+        for (const h of table.querySelectorAll<HTMLElement>('th[data-key]')) {
+          if (!w.has(h.dataset.key as string)) {
+            w.set(h.dataset.key as string, h.offsetWidth);
+          }
+        }
+        table.classList.add('rp-fixed');
+        const startX = e.clientX, startW = w.get(key) as number;
+        const apply = (): void => {
+          table.querySelectorAll<HTMLElement>('th[data-key]').forEach((h) => { h.style.width = `${w.get(h.dataset.key as string)}px`; });
+          table.style.width = `${[...table.querySelectorAll<HTMLElement>('th[data-key]')].reduce((a, h) => a + (w.get(h.dataset.key as string) ?? 140), 0)}px`;
+        };
+        apply();
+        const move = (m: PointerEvent): void => { w.set(key, Math.max(MIN_WIDTH, startW + m.clientX - startX)); apply(); };
+        const stop = (): void => {
+          grip.removeEventListener('pointermove', move);
+          grip.removeEventListener('pointerup', stop);
+          grip.removeEventListener('pointercancel', stop);
+          th.draggable = true;
+          saveWidths(w);
+        };
+        grip.addEventListener('pointermove', move);
+        grip.addEventListener('pointerup', stop);
+        grip.addEventListener('pointercancel', stop);
       });
       th.addEventListener('dragstart', (e) => { e.dataTransfer?.setData('text/plain', key); dragging = key; th.classList.add('rp-drag'); });
       th.addEventListener('dragend', () => { dragging = ''; list.querySelectorAll('.rp-drag, .rp-over').forEach((x) => x.classList.remove('rp-drag', 'rp-over')); });

@@ -77,6 +77,21 @@ await page.keyboard.press('Escape');
 await page.waitForFunction(() => !document.getElementById('app-settings').open);
 if ((await heads()).includes('Region')) fail('hide a column in the settings');
 
+// a drag of the right edge of a header resizes that column, and does not sort or move it
+const wOf = (k) => page.evaluate((x) => document.querySelector(`.rp-list th[data-key="${x}"]`).getBoundingClientRect().width, k);
+const sortBefore = await page.evaluate(() => location.hash.match(/sort=[^&]+/)?.[0]);
+const wt0 = await wOf('title'), wi0 = await wOf('id');
+const gb = await (await page.$('.rp-list th[data-key="title"] .rp-grip')).boundingBox();
+await page.mouse.move(gb.x + 3, gb.y + gb.height / 2);
+await page.mouse.down();
+await page.mouse.move(gb.x + 103, gb.y + gb.height / 2, { steps: 5 });
+await page.mouse.up();
+const wt1 = await wOf('title'), wi1 = await wOf('id');
+const sortAfter = await page.evaluate(() => location.hash.match(/sort=[^&]+/)?.[0]);
+console.log('column resize title', Math.round(wt0), '->', Math.round(wt1), 'ticket', Math.round(wi0), '->', Math.round(wi1));
+if (!(wt1 > wt0 + 60) || Math.abs(wi1 - wi0) > 2 || sortBefore !== sortAfter) fail('column resize');
+if (!(await page.evaluate(() => location.hash.includes('widths=')))) fail('column widths in the link');
+
 // the left panel resizes with a drag and with the keyboard
 const sbw = () => page.evaluate(() => document.getElementById('side-nav').getBoundingClientRect().width);
 const w0 = await sbw();
