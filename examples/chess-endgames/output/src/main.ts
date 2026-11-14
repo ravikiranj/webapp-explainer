@@ -11,7 +11,8 @@ import '../../../../shared/app.css';
 import './style.css';
 import { marked } from 'marked';
 import problemText from './problem.md?raw';
-import { applyTheme, createHomeLink, createThemeToggle, currentTheme } from './theme.ts';
+import { applyTheme, createHomeLink, currentTheme } from './theme.ts';
+import { mountSettings } from '../../../../shared/settings.ts';
 
 import { CONCEPTS, type Concept } from './puzzles.ts';
 import { ChessEngine } from './engine.ts';
@@ -34,6 +35,8 @@ let activeConcept: Concept = CONCEPTS[0];
 let viewMode: 'concept' | 'problem' = 'concept';
 
 applyTheme(currentTheme());
+// The shared settings: theme and text size. The board follows the CSS, so no redraw is needed.
+mountSettings({ onChange: () => undefined });
 
 /** Count solved puzzles in a concept for the active profile. */
 function solvedCount(concept: Concept): number {
@@ -48,7 +51,6 @@ function buildNav(): void {
   brand.innerHTML = '<i class="bi bi-puzzle"></i> Chess Endgames<small>a trainer up to 1800 ELO</small>';
   nav.append(brand);
   nav.append(createHomeLink());
-  nav.append(createThemeToggle());
 
   // Profile switcher.
   const box = document.createElement('div');

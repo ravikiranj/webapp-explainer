@@ -17,11 +17,11 @@ export const resolve: Section = {
   render(el) {
     const f = frame(el, 'Selected severities', `${report().source} · open tickets are not measured`);
     let dispose = (): void => undefined;
+    let sel: number | undefined; // the selected bucket; the biggest one at the start
     const draw = (): void => {
       dispose();
       f.controls.innerHTML = '';
       f.body.innerHTML = '';
-      f.clearTickets();
       const pal = PALETTES[get('palette', 'classic')];
       const counts: Record<number, number> = {};
       for (const t of report().tickets) {
@@ -42,12 +42,14 @@ export const resolve: Section = {
       host.innerHTML = '<div class="rp-chart" style="height:clamp(18rem,40vh,30rem)"></div>';
       f.body.append(host);
       const bins = BUCKETS.map(([a, b]) => done.filter((t) => t.r - t.c >= a && t.r - t.c < b));
+      const chosenBin = sel ?? bins.reduce((best, b, i) => (b.length > bins[best].length ? i : best), 0);
       const ink = themeInk();
       dispose = mountChart(host.firstElementChild as HTMLElement, {
         grid: { left: 24, right: 16, top: 24, bottom: 8, containLabel: true }, tooltip: { trigger: 'item' },
         xAxis: { type: 'category', data: BUCKETS.map((b) => b[2]), axisTick: { show: false } }, yAxis: { type: 'value', splitLine: { lineStyle: { color: ink.grid } } },
-        series: [{ type: 'bar', barMaxWidth: 54, data: bins.map((b) => b.length), itemStyle: { color: pal.accent, borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top' } }]
-      }, (p) => f.showTickets(`resolved in ${BUCKETS[p.dataIndex][2]}`, bins[p.dataIndex]));
+        series: [{ type: 'bar', barMaxWidth: 54, markArea: { silent: true, itemStyle: { color: pal.accent, opacity: 0.2 }, data: [[{ xAxis: BUCKETS[chosenBin][2] }, { xAxis: BUCKETS[chosenBin][2] }]] }, data: bins.map((b, i) => ({ value: b.length, itemStyle: { color: pal.accent, borderRadius: [4, 4, 0, 0], ...(i === chosenBin ? { borderColor: ink.text, borderWidth: 2 } : {}) } })), label: { show: true, position: 'top' } }]
+      }, (p) => { sel = p.dataIndex; draw(); });
+      f.showTickets(`resolved in ${BUCKETS[chosenBin][2]}`, bins[chosenBin]);
     };
     draw();
     return () => dispose();

@@ -11,7 +11,7 @@ import '../../../../shared/app.css';
 import './report.css';
 import { mountShell } from '../../../../shared/shell.ts';
 import { loadData } from './data.ts';
-import { applyLook, mountSidebarControls } from './controls.ts';
+import { applyLook, reportPanes, textSize } from './controls.ts';
 import { brief } from './sections/brief.ts';
 import { volume } from './sections/volume.ts';
 import { issues } from './sections/issues.ts';
@@ -23,11 +23,11 @@ async function main(): Promise<void> {
   applyLook();
   mountShell({
     brand: 'Support Queue Report',
-    subtitle: 'a refreshable report',
+    subtitle: 'support tickets, last 12 months',
     brandIcon: 'bi-bar-chart-line',
-    sections: [brief, volume, issues, causes, resolve]
+    sections: [brief, volume, issues, causes, resolve],
+    settings: { panes: reportPanes, textSize }
   });
-  mountSidebarControls();
 }
 
 void main();

@@ -5,10 +5,10 @@ import briefText from '../report.md?raw';
 export const brief: Section = {
   id: 'brief',
   group: 'Start here',
-  title: 'The brief',
+  title: 'Overview',
   icon: 'bi-file-text',
-  badge: 'brief',
-  caption: 'The brief that this report was built from.',
+  badge: 'overview',
+  caption: 'What this report covers, and the brief that it was built from.',
   render(el) {
     const md = document.createElement('div');
     md.className = 'markdown';

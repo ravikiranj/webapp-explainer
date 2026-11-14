@@ -15,11 +15,11 @@ export const causes: Section = {
   render(el) {
     const f = frame(el, 'Selected severities', `${report().source} · the class comes from the cause field; a reviewer corrected some`);
     let dispose = (): void => undefined;
+    let sel: string | undefined; // the selected cause; the biggest one at the start
     const draw = (): void => {
       dispose();
       f.controls.innerHTML = '';
       f.body.innerHTML = '';
-      f.clearTickets();
       const pal = PALETTES[get('palette', 'classic')];
       const counts: Record<number, number> = {};
       for (const t of report().tickets) {
@@ -31,6 +31,7 @@ export const causes: Section = {
       const tickets = report().tickets.filter((t) => active.has(t.sev));
       const n = (k: string): number => tickets.filter((t) => t.cause === k).length;
       const pct = (x: number): string => `${tickets.length ? Math.round((100 * x) / tickets.length) : 0}%`;
+      const chosenCause = sel ?? [...CAUSE_ORDER].sort((a, b) => n(b) - n(a))[0];
       const reviewed = tickets.filter((t) => t.by === 'review').length;
       f.body.append(cards([[pct(n('dependency')), 'Dependency'], [pct(n('ours')), 'Our issue'], [pct(reviewed), 'Reviewed by a person'], [String(tickets.length), 'Tickets']]));
       const host = document.createElement('div');
@@ -42,9 +43,10 @@ export const causes: Section = {
         grid: { left: 24, right: 48, top: 8, bottom: 8, containLabel: true }, tooltip: { trigger: 'item', confine: true },
         xAxis: { type: 'value', splitLine: { lineStyle: { color: ink.grid } } },
         yAxis: { type: 'category', inverse: true, data: CAUSE_ORDER.map((k) => CAUSES[k]), axisTick: { show: false } },
-        series: [{ type: 'bar', barMaxWidth: 26, label: { show: true, position: 'right' },
-          data: CAUSE_ORDER.map((k) => ({ value: n(k), itemStyle: { color: pal.causes[k], borderRadius: [0, 4, 4, 0] } })) }]
-      }, (p) => f.showTickets(CAUSES[CAUSE_ORDER[p.dataIndex]], tickets.filter((t) => t.cause === CAUSE_ORDER[p.dataIndex])));
+        series: [{ type: 'bar', barMaxWidth: 26, markArea: { silent: true, itemStyle: { color: pal.accent, opacity: 0.2 }, data: [[{ yAxis: CAUSES[chosenCause] }, { yAxis: CAUSES[chosenCause] }]] }, label: { show: true, position: 'right' },
+          data: CAUSE_ORDER.map((k) => ({ value: n(k), itemStyle: { color: pal.causes[k], borderRadius: [0, 4, 4, 0], ...(k === chosenCause ? { borderColor: ink.text, borderWidth: 2 } : {}) } })) }]
+      }, (p) => { sel = CAUSE_ORDER[p.dataIndex]; draw(); });
+      f.showTickets(CAUSES[chosenCause], tickets.filter((t) => t.cause === chosenCause));
     };
     draw();
     return () => dispose();

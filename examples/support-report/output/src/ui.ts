@@ -1,7 +1,8 @@
 // The parts that every slide shares: the frame, chips, toggles, cards, and the quiet list of tickets.
 
 import { h } from '../../../../shared/dom.ts';
-import { fmtDay, type Ticket, CAUSES } from './data.ts';
+import { type Ticket } from './data.ts';
+import { esc, ticketList } from './tickets.ts';
 import { set } from './state.ts';
 
 export interface Frame {
@@ -11,36 +12,31 @@ export interface Frame {
   clearTickets: () => void;
 }
 
-export function esc(s: string): string {
-  return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string);
-}
+export { esc };
 
 /** The frame of a slide: a scope badge, the download links, the controls, the body, the quiet list, and a footer. */
 export function frame(el: HTMLElement, scope: string, footer: string): Frame {
   const controls = h('div', { class: 'rp-controls' });
   const body = h('div', { class: 'rp-body' });
-  const sum = h('summary', {}, ['Tickets: click a chart element to list them here']);
+  const EMPTY = 'Tickets: nothing selected';
+  const sum = h('summary', {}, [EMPTY]);
+  const toolbar = h('div', { class: 'rp-tools' });
   const list = h('div', { class: 'rp-list' });
-  const drawer = h('details', { class: 'rp-drawer' }, [sum, list]) as HTMLDetailsElement;
-  const downloads = h('span', { class: 'rp-dl' }, ['Data ']);
-  for (const [label, file] of [['JSON', 'report-data.json'], ['Tickets CSV', 'tickets.csv'], ['Weeks CSV', 'weeks.csv']]) {
-    downloads.append(h('a', { href: `./${file}`, download: file }, [label]), ' ');
-  }
+  const drawer = h('details', { class: 'rp-drawer', open: '' }, [sum, toolbar, list]) as HTMLDetailsElement;
+  drawer.open = true; // a slide never opens with an empty list
+  const draw = ticketList(list, toolbar);
   set({}); // keep the link in step with the saved state, also after the shell redraws a slide
   el.append(
-    h('div', { class: 'rp-top' }, [h('span', { class: 'rp-scope' }, [scope]), downloads]),
+    h('div', { class: 'rp-top' }, [h('span', { class: 'rp-scope' }, [scope])]),
     controls, body, drawer, h('div', { class: 'rp-foot' }, [footer])
   );
   const clearTickets = (): void => {
-    sum.textContent = 'Tickets: click a chart element to list them here';
-    list.innerHTML = '';
+    sum.textContent = EMPTY;
+    draw([]);
   };
   const showTickets = (title: string, tickets: Ticket[]): void => {
-    const rows = tickets.slice().sort((a, b) => b.c - a.c).slice(0, 300);
-    sum.textContent = `Tickets: ${title} (${tickets.length}${tickets.length > 300 ? ', first 300' : ''})`;
-    list.innerHTML = `<table class="table table-sm table-hover"><thead><tr><th>Ticket</th><th>Title</th><th>Product</th><th>Sev</th><th>Created</th><th>Cause</th></tr></thead><tbody>${
-      rows.map((t) => `<tr><td>${t.id}</td><td>${esc(t.title)}</td><td>${t.item}</td><td>${t.sev}</td><td>${fmtDay(t.c)}</td><td>${CAUSES[t.cause]}${t.by === 'review' ? ' (reviewed)' : ''}</td></tr>`).join('')}</tbody></table>`;
-    drawer.open = true; // open in place; never scroll the page
+    sum.textContent = `Tickets: ${title} (${tickets.length}${tickets.length > 300 ? ', first 300 shown' : ''})`;
+    draw(tickets); // open in place; never scroll the page
   };
   return { controls, body, showTickets, clearTickets };
 }

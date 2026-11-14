@@ -22,7 +22,7 @@ A reference implementation is in [examples/support-report/](./examples/support-r
     2. The outputs are:
         1. A generator program with a command for each step (section 4).
         2. A static site in `output/`. It reads one data file, `output/report-data.json`, and works from any path.
-        3. Raw data downloads linked at the top of the page: the JSON file and one or two CSV files. They hold no private text.
+        3. Raw data downloads: the JSON file and one or two CSV files. Put them in a Data pane of the settings, once. Do not repeat them on each slide. They hold no private text.
         4. A README with the commands, the options, the upload steps and the known limits.
         5. Tests (section 10).
 
@@ -83,6 +83,8 @@ A reference implementation is in [examples/support-report/](./examples/support-r
 
 7. The slides
     1. Put a list of the slides in the left panel and one slide in the right panel. Keep the keys for Previous and Next. Show one slide at a time.
+        1. Make the left panel resizable. Give it a drag handle on its right edge, a minimum width and a maximum width, and a saved width. Make the handle a `role="separator"` that works with the arrow keys. Put this code in the shared shell, so that every app gets it.
+        2. Keep the left panel small. Put only the slide list in it. Put every control for the look and the data in the shared settings (section 8).
     2. Give every slide the same parts, in this order:
         1. A title and a scope badge. The badge names the records that the slide counts, for example "High priority", and the filter that is on.
         2. The filters and the controls.
@@ -100,25 +102,28 @@ A reference implementation is in [examples/support-report/](./examples/support-r
         1. Chips for categories, each with its count. At least one chip stays on.
         2. Range buttons, for example the last month, 3 months, 6 months and 12 months, counted back from the date of the data.
         3. Segmented toggles for the view (lines or bars), the measure, and the period (month or week).
-    5. Make a click on a chart element fill the list of records under the chart. The list must be quiet:
-        1. Use a closed `<details>` element with a muted summary line.
-        2. Open it in place. Never scroll the page. Do not call `scrollIntoView`, and do not move the focus in a way that scrolls.
-        3. Give the list a maximum height with its own scroll, so that the chart stays in view.
-        4. Clear the list when a filter changes.
+    5. Make every slide open with an item already selected and its records already listed. A reader must never see an empty list. A click on a chart element or a row changes the selection. It does not start it. The list must be quiet:
+        1. Pick the default item by a rule that you can state in one line: the latest period, the biggest bar, the top row. Mark the selected item with a tinted background: a band behind the bar or the period on a chart, and a tinted row in a table. A border or a dashed line alone is too weak, because the reader gets no clear sign. Keep the selection when a filter changes. If the item no longer exists, fall back to the default.
+        2. Use a `<details>` element with a muted summary line. It is open at the start. The summary names the selection and the count, for example "Tickets: Dependency (574)".
+        3. Open it in place. Never scroll the page. Do not call `scrollIntoView`, and do not move the focus in a way that scrolls.
+        4. Give the list a maximum height with its own scroll, so that the chart stays in view.
+        5. Make the columns of the list sortable. A click on a header sorts by that column, and a second click reverses the order. Mark the sorted header with an arrow and `aria-sort`. Make the headers reachable by keyboard.
+        6. Let the reader choose the columns. Let the reader drag a column header to move the column, and give the keyboard the same with Alt and the left or right arrow. Do not use move buttons. Give the list a "Columns" chooser with a check box for each column, and a reset. At least one column stays on. Show only a few columns at the start, and offer the others, for example region, source, resolve time, cause field and resolution text. Never offer a column that holds private text.
+        7. Keep the columns and the sort order in the link state, so that a copied link opens the same list.
     6. Make a hover show the period, the count and the rate. For a week, show the range of dates, the incoming count for each day, and the share resolved.
     7. Offer a week view next to the month view when the team works in weeks. Label a week by the date that starts it. Mark the current period as partial.
     8. Put the method on a Method button, in a dialog. Keep the slide itself free of long text. A slide has at most one short lead line, and one line on the chart when a reader could misread it.
 
 8. Look and usability
     1. Write all visible text in ASD-STE100, as design.md says. Keep each label short.
-    2. Give the page a text size control with five steps (XXS to L) and a modest default. Make every size scale with the root size, and make the chart text follow it.
-    3. Give the page at least four colour palettes, and one of them safe for colour-blind readers. A palette sets every colour that carries a meaning: the groups, the cause classes, the scope badges, the buttons and the active item. Keep one colour for one meaning inside a palette. Save the choice.
+    2. Use the shared settings of design.md (section 8.2): a large "Settings" button at the top right opens a dialog with a pane list on the left and one pane on the right. The reader can drag the dialog by its header and resize it by its corner. The shared Appearance pane holds the theme and a text size in pixels (a slider with minus and plus buttons, from 12 to 22, default 15). Keep the size in the link state as a number. Make every size scale with the root size, and make the chart text follow it. Add the panes of the report: Colours, Ticket list and Data. Do not hide the settings in a collapsed menu, and do not repeat a setting on each slide.
+    3. Give the page ten colour palettes, and make at least one of them safe for colour-blind readers and one of them high contrast. Put the palettes in the Colours pane. Show one palette on each line: its name, its swatches, and a small sample chart that uses its colours (bars, a line and a mix bar), so that the reader sees the look before the choice. Mark the active one. A palette sets every colour that carries a meaning: the groups, the cause classes, the scope badges, the buttons and the active item. Keep one colour for one meaning inside a palette. Save the choice.
     4. Give the page a light theme and a dark theme. Make the charts follow the theme.
     5. Use the full width of the window. Do not set a maximum width on the content. Size a chart by the height of the window, with a minimum and a maximum.
     6. Keep the state in the link, in the fragment. The order is: the link, then the last saved value, then the default. Ignore an invalid value. Write the current value back to the link when it changes, so a copied link opens the same view. Do not show a toast for a change that the page already shows.
     7. Give each key a name that cannot be confused with another key.
     8. Make every control reachable by keyboard. Turn on the accessibility option of the chart library. Keep a table of the numbers for each chart that has no table.
-    9. Put the download links at the top of the page: the JSON file and the CSV files. The CSV files must have the same fields, without private text.
+    9. Put the download links in the Data pane of the settings: the JSON file and the CSV files. The CSV files must have the same fields, without private text.
 
 9. Traps with chart libraries
     1. A canvas chart draws text with a font string. An invalid family, for example `inherit`, makes the canvas ignore the whole font and use a tiny default. Pass the computed font stack of the page, and set the sizes on the options. Check the real font in the browser, not only the options.
@@ -134,11 +139,14 @@ A reference implementation is in [examples/support-report/](./examples/support-r
     1. Write unit tests for the parts that hold logic: parsing, grouping keys, time and week arithmetic, linking rules, and the read-only rule of the client.
     2. Write a browser check that runs in a headless browser against the local server. It must fail on any of these:
         1. A slide does not draw a chart or a table.
-        2. A click on a chart element or a row does not list records, or it scrolls the page.
-        3. A filter does not change the count or the link.
-        4. A palette or a text size does not change the page.
-        5. A wide window does not use the width.
-        6. A request leaves the local server, or the console shows an error.
+        2. A slide opens with an empty list, or a click on a chart element or a row does not change the list, or it scrolls the page.
+        3. A column header does not sort the list, or a drag of a column header does not move the column, or the column chooser does not show and hide columns.
+        4. The left panel does not resize with the mouse and with the keyboard.
+        5. The settings dialog does not open from the top right button, does not drag by its header, or does not resize by its corner.
+        6. A filter does not change the count or the link.
+        7. A palette or a text size does not change the page.
+        8. A wide window does not use the width.
+        9. A request leaves the local server, or the console shows an error.
     3. Take a screenshot of each slide and look at it, in both themes and in at least two palettes. Read a screenshot only after the program that makes it has finished.
 
 11. Run, preview and publish
@@ -150,10 +158,10 @@ A reference implementation is in [examples/support-report/](./examples/support-r
     6. Leave a way to move the site to another host. The `output/` folder is the whole contract, and nothing in the page may depend on the host.
 
 12. Check your work
-    1. Each question of the brief has a slide, and each slide has a scope badge.
+    1. Each question of the brief has a slide, and each slide has a scope badge and opens with a selected item and a filled list.
     2. The totals match a second query of the source, and each number says what it covers.
     3. Each estimate is marked as an estimate.
     4. The unit tests and the browser check pass.
-    5. The page works with the network off, in both themes, and at the smallest and the largest text size.
+    5. The page works with the network off, in both themes, and at the smallest and the largest text size (12 and 22 px).
     6. No private text is in the data file, the downloads or git.
     7. No name of a private tool, account or address is in the files of the public repository.

@@ -18,7 +18,7 @@ export const APPS: readonly AppCard[] = [
   {
     slug: 'support-report',
     title: 'Support Queue Report',
-    subtitle: 'a refreshable report',
+    subtitle: 'support tickets, last 12 months',
     icon: 'bi-bar-chart-line',
     domain: 'Report',
     summary:

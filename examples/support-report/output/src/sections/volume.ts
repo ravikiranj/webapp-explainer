@@ -44,11 +44,12 @@ export const volume: Section = {
   render(el) {
     const f = frame(el, 'All severities', `${report().source} · created ${fmtDay(report().tickets[0].c)} to ${report().today}`);
     let dispose = (): void => undefined;
+    let sel: { name: string; idx: number; key: string } | undefined; // the selected point; the latest incoming at the start
+    const reset = (): void => { sel = undefined; };
     const draw = (): void => {
       dispose();
       f.controls.innerHTML = '';
       f.body.innerHTML = '';
-      f.clearTickets();
       const pal = PALETTES[get('palette', 'classic')];
       const view = get('view', 'lines'), weekly = get('period', 'm') === 'w', measure = get('measure', 'in');
       const counts: Record<number, number> = {};
@@ -58,8 +59,8 @@ export const volume: Section = {
       const sevs = get('sev', '').split(',').filter(Boolean).map(Number);
       const active = new Set(sevs.length ? sevs : [1, 2, 3, 4]);
       chips(f.controls, 'Severity', [1, 2, 3, 4], counts, active, (next) => { set({ sev: next.length === 4 ? '' : next.join(',') }); draw(); });
-      segmented(f.controls, 'Period', [['m', 'Month'], ['w', 'Week']], weekly ? 'w' : 'm', (v) => { set({ period: v }); draw(); });
-      segmented(f.controls, 'Chart type', [['lines', 'Lines'], ['bars', 'Bars']], view, (v) => { set({ view: v }); draw(); });
+      segmented(f.controls, 'Period', [['m', 'Month'], ['w', 'Week']], weekly ? 'w' : 'm', (v) => { set({ period: v }); reset(); draw(); });
+      segmented(f.controls, 'Chart type', [['lines', 'Lines'], ['bars', 'Bars']], view, (v) => { set({ view: v }); reset(); draw(); });
       if (view === 'lines') {
         segmented(f.controls, 'Measure', [['in', 'Incoming'], ['out', 'Resolved']], measure, (v) => { set({ measure: v }); draw(); });
       }
@@ -74,6 +75,10 @@ export const volume: Section = {
       host.className = 'rp-panel';
       host.innerHTML = '<div class="rp-chart"></div>';
       f.body.append(host);
+      const lines = view === 'lines';
+      const lastIdx = per.names.length - 1;
+      const first = lines ? 'All incoming' : PRODUCTS[0];
+      const cur = sel && sel.key === `${view}${weekly}` ? sel : { name: first, idx: lastIdx, key: `${view}${weekly}` };
       const ink = themeInk();
       const overall = pal.overall[currentTheme() === 'dark' ? 1 : 0];
       const now = Date.parse(report().today + 'T23:59:59Z') / 1000;
@@ -87,11 +92,11 @@ export const volume: Section = {
         lineStyle: { width: big ? 4 : 2, color, type: dashed ? 'dashed' : 'solid' }, itemStyle: { color }
       });
       const bar = (name: string, data: number[], color: string): Record<string, unknown> => ({ name, type: 'bar', stack: 'in', data, itemStyle: { color }, barMaxWidth: 28 });
-      const lines = view === 'lines';
       const all: Record<string, unknown>[] = lines
         ? [line('All incoming', series('in'), overall, true), line('All resolved', series('out'), overall, true, true),
           ...PRODUCTS.map((p, i) => line(p, series(measure, p), pal.items[i], false))]
         : [...PRODUCTS.map((p, i) => bar(p, series('in', p), pal.items[i])), line('All resolved', series('out'), overall, true, true)];
+      (all[0] as Record<string, unknown>).markArea = { silent: true, itemStyle: { color: pal.accent, opacity: 0.2 }, data: [[{ xAxis: per.labels[cur.idx] }, { xAxis: per.labels[cur.idx] }]] };
       dispose = mountChart(host.firstElementChild as HTMLElement, {
         legend: { top: 0, data: lines ? ['All incoming', 'All resolved'] : [...PRODUCTS, 'All resolved'] },
         grid: { left: 56, right: 16, top: 40, bottom: 8, containLabel: true },
@@ -101,11 +106,11 @@ export const volume: Section = {
         yAxis: { type: 'value', splitLine: { lineStyle: { color: ink.grid } } },
         series: all
       }, (p) => {
-        const name = p.seriesName ?? '';
-        const kind = name === 'All resolved' || (lines && !name.startsWith('All') && measure === 'out') ? 'out' : 'in';
-        const item = PRODUCTS.includes(name) ? name : undefined;
-        f.showTickets(`${name.toLowerCase()}, ${per.names[p.dataIndex]}`, pick(kind, p.dataIndex, item));
+        sel = { name: p.seriesName ?? '', idx: p.dataIndex, key: cur.key };
+        draw();
       });
+      const kindOf = (name: string): string => (name === 'All resolved' || (lines && !name.startsWith('All') && measure === 'out') ? 'out' : 'in');
+      f.showTickets(`${cur.name.toLowerCase()}, ${per.names[cur.idx]}`, pick(kindOf(cur.name), cur.idx, PRODUCTS.includes(cur.name) ? cur.name : undefined));
     };
     draw();
     return () => dispose();

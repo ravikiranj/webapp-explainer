@@ -13,6 +13,10 @@ To turn a subject into a short narrated video with chapters and subtitles, use
 [video/](./video/README.md): a canvas renderer for diagrams and a Manim renderer for math.
 The rate-limiter and unique-id-generator apps each have a Video section built with it.
 
+## See it in action
+
+The deployed site is at <https://ravikiranj.github.io/webapp-explainer>.
+
 ## The apps
 
 | App | Subject | Data |

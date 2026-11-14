@@ -64,6 +64,10 @@
   box-sizing: border-box;
 }
 
+html {
+  font-size: 15px; /* the text size setting changes this */
+}
+
 html,
 body {
   margin: 0;
@@ -74,16 +78,265 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-size: 15px;
+  font-size: 1rem; /* the root size is the text size setting; the default is 15px */
   line-height: 1.55;
+}
+
+/* ---------- Settings: a button at the top right and a dialog with panes ---------- */
+
+.settings-button {
+  position: fixed;
+  top: 0.8rem;
+  right: 1.4rem;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 0;
+  border-radius: 2rem;
+  background: var(--accent, var(--sb-active));
+  color: #ffffff;
+  padding: 0.55rem 1.2rem;
+  font-size: 1.05rem;
+  font-weight: 650;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+}
+
+.settings-button .bi {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.settings-button:hover {
+  filter: brightness(1.12);
+}
+
+.settings-button:focus-visible,
+.app-settings button:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.app-settings {
+  width: min(46rem, 94vw);
+  height: min(40rem, 90vh);
+  min-width: 20rem;
+  min-height: 14rem;
+  max-width: 98vw;
+  max-height: 98vh;
+  resize: both; /* drag the lower right corner to resize */
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: var(--panel);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+.app-settings[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-settings::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.app-settings .set-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1.2rem;
+  border-bottom: 1px solid var(--line);
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+}
+
+.app-settings h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.app-settings .set-close {
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 1.1rem;
+}
+
+.app-settings .set-main {
+  display: grid;
+  grid-template-columns: 12rem 1fr;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.app-settings .set-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.8rem;
+  border-right: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.app-settings .set-nav button {
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--ink);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.app-settings .set-nav button:hover {
+  background: var(--panel);
+}
+
+.app-settings .set-nav button.on {
+  background: var(--accent, var(--sb-active));
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.app-settings .set-panes {
+  padding: 1rem 1.3rem;
+}
+
+.app-settings section[hidden] {
+  display: none;
+}
+
+.app-settings .set-h {
+  margin: 0.2rem 0 0.4rem;
+  color: var(--ink-dim);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.app-settings .set-note {
+  color: var(--ink-dim);
+  font-size: 0.85rem;
+}
+
+.app-settings .set-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.1rem;
+}
+
+.app-settings .set-size {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.app-settings .set-size input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent, var(--sb-active));
+}
+
+.app-settings .set-size output {
+  min-width: 3.6rem;
+  font-weight: 650;
+  text-align: right;
+}
+
+.app-settings .set-size button {
+  border: 2px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--panel-2);
+  color: var(--ink);
+  padding: 0.15rem 0.7rem;
+  font-weight: 700;
+}
+
+.app-settings .set-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.app-settings .set-choice,
+.app-settings .set-row button {
+  flex: 1;
+  border: 2px solid var(--line);
+  border-radius: 0.6rem;
+  background: var(--panel-2);
+  color: var(--ink);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.app-settings [aria-pressed="true"] {
+  border-color: var(--accent, var(--sb-active));
+  box-shadow: 0 0 0 1px var(--accent, var(--sb-active));
+}
+
+.app-settings .set-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.app-settings .set-links a {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  color: var(--accent, var(--sb-active));
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .app-settings .set-main {
+    grid-template-columns: 1fr;
+  }
+
+  .app-settings .set-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .settings-button span {
+    display: none;
+  }
 }
 
 /* ---------- Layout and sidebar ---------- */
 
 .app-shell {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: var(--sb-w, 280px) minmax(0, 1fr);
   height: 100vh;
+  position: relative;
+}
+
+/* The drag handle on the right edge of the left panel. */
+.sb-resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--sb-w, 280px) - 3px);
+  width: 6px;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 20;
+}
+
+.sb-resizer:hover,
+.sb-resizer.drag,
+.sb-resizer:focus-visible {
+  background: var(--sb-active);
+  outline: none;
 }
 
 .side-nav {
@@ -554,6 +807,10 @@ body {
   .app-shell {
     grid-template-columns: 1fr;
     height: auto;
+  }
+
+  .sb-resizer {
+    display: none;
   }
 
   .two-col {
